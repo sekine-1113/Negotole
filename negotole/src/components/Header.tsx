@@ -1,21 +1,20 @@
 import { auth, signIn, signOut } from "@/lib/auth";
+import { getPointBalance } from "@/lib/points";
 import Link from "next/link";
 import { PointBadge } from "./PointBadge";
 
-async function getPoints(userId: string): Promise<number> {
-  try {
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/users/me`, { cache: "no-store" });
-    if (!res.ok) return 0;
-    const data = await res.json();
-    return data.points?.total ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
 export async function Header() {
   const session = await auth();
+
+  let totalPoints = 0;
+  if (session?.user?.id) {
+    try {
+      const balance = await getPointBalance(Number(session.user.id));
+      totalPoints = balance.total;
+    } catch {
+      // ポイント取得失敗時は 0 を表示
+    }
+  }
 
   return (
     <header className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -25,7 +24,7 @@ export async function Header() {
       <div className="flex items-center gap-3">
         {session?.user ? (
           <>
-            <PointBadge total={await getPoints(session.user.id!)} />
+            <PointBadge total={totalPoints} />
             <Link
               href="/post/new"
               className="text-sm bg-black text-white rounded-full px-4 py-1.5 hover:bg-gray-800"

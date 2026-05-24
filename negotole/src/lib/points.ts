@@ -1,11 +1,29 @@
 import { and, gt, isNull, lt, or, sql, sum } from "drizzle-orm";
 import { db } from "./db";
-import { userPoints } from "./db/schema";
+import { campaigns, userPoints } from "./db/schema";
+import type { Campaign } from "./db/schema";
+
+const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+
+function getJSTDayBounds(): { todayStart: Date; todayEnd: Date } {
+  const nowUTC = Date.now();
+  const nowJST = new Date(nowUTC + JST_OFFSET_MS);
+
+  const startJST = new Date(nowJST);
+  startJST.setUTCHours(0, 0, 0, 0);
+
+  const endJST = new Date(nowJST);
+  endJST.setUTCHours(23, 59, 59, 999);
+
+  return {
+    todayStart: new Date(startJST.getTime() - JST_OFFSET_MS),
+    todayEnd: new Date(endJST.getTime() - JST_OFFSET_MS),
+  };
+}
 
 export async function getPointBalance(userId: number): Promise<{ daily: number; permanent: number; total: number }> {
   const now = new Date();
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  const { todayEnd } = getJSTDayBounds();
 
   const rows = await db
     .select({ total: sum(userPoints.getPoint) })
@@ -50,8 +68,7 @@ export async function getPointBalance(userId: number): Promise<{ daily: number; 
 
 export async function hasDailyPointToday(userId: number): Promise<boolean> {
   const now = new Date();
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  const { todayStart } = getJSTDayBounds();
 
   const rows = await db
     .select({ id: userPoints.id })
@@ -71,8 +88,7 @@ export async function hasDailyPointToday(userId: number): Promise<boolean> {
 }
 
 export async function grantDailyPoints(userId: number): Promise<void> {
-  const todayEnd = new Date();
-  todayEnd.setHours(23, 59, 59, 999);
+  const { todayEnd } = getJSTDayBounds();
 
   await db.insert(userPoints).values({
     userId,
@@ -85,6 +101,32 @@ export async function consumeOnePoint(userId: number): Promise<void> {
   await db.insert(userPoints).values({
     userId,
     getPoint: -1,
+    expiresAt: null,
+  });
+}
+
+export async function getActiveCampaign(): Promise<Campaign | null> {
+  const now = new Date();
+  const rows = await db
+    .select()
+    .from(campaigns)
+    .where(
+      and(
+        sql`${campaigns.startsAt} <= ${now}`,
+        sql`${campaigns.endsAt} >= ${now}`,
+        isNull(campaigns.deletedAt)
+      )
+    )
+    .orderBy(campaigns.startsAt)
+    .limit(1);
+
+  return rows[0] ?? null;
+}
+
+export async function grantCampaignPoints(userId: number, bonusPoints: number): Promise<void> {
+  await db.insert(userPoints).values({
+    userId,
+    getPoint: bonusPoints,
     expiresAt: null,
   });
 }

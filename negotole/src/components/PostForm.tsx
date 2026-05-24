@@ -41,6 +41,7 @@ export function PostForm({ totalPoints }: Props) {
         return;
       }
       router.push("/");
+      router.refresh();
     } catch {
       setError("通信エラーが発生しました");
     } finally {
