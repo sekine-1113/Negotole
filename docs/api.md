@@ -80,10 +80,13 @@ ORDER BY created_at DESC
 
 **処理フロー**
 
-1. ポイント残高を確認（`user_point` の `get_point` 合計、`expires_at IS NULL OR expires_at > NOW()`）
-2. 残高不足なら `402` を返す
-3. `hidden_at = NOW() + duration（分）` を計算してレコードを作成
-4. `user_point` にポイント消費レコード（`get_point` に負の値）を挿入
+以下の操作は **単一トランザクション** で原子的に実行する。
+
+1. `user_point` の合計をロック付きで取得し、残高が 1pt 未満なら `402` を返す（チェックと消費の間に他リクエストが割り込めないよう排他的に実行）
+2. `post` テーブルにレコードを作成（`hidden_at = NOW() + duration（分）`）
+3. `user_point` にポイント消費レコード（`get_point = -1`）を挿入
+
+どちらか一方が失敗した場合は両方ロールバックされる。
 
 **消費ポイント**: 投稿 1 回 = 1pt（固定）
 
@@ -122,7 +125,8 @@ ORDER BY created_at DESC
 {
   "user": {
     "id": 1,
-    "name": "ユーザー名"
+    "name": "ユーザー名",
+    "role": "user"
   },
   "points": {
     "daily": 8,
@@ -134,7 +138,103 @@ ORDER BY created_at DESC
 
 `daily`: 当日限定ポイント残高（`expires_at` が本日中のもの）  
 `permanent`: 恒久ポイント残高（`expires_at IS NULL` のもの）  
-`total`: `daily + permanent`
+`total`: `daily + permanent`  
+`role`: ユーザーロール（`user` or `admin`）
+
+---
+
+### 管理者: キャンペーン
+
+管理者ロール（`role = admin`）のみアクセス可能。一般ユーザーは `403` を返す。
+
+#### `GET /api/admin/campaigns`
+
+キャンペーン一覧を取得する。
+
+**レスポンス `200`**
+
+```json
+{
+  "campaigns": [
+    {
+      "id": 1,
+      "name": "キャンペーン名",
+      "description": "説明文",
+      "startsAt": "2024-01-01T00:00:00Z",
+      "endsAt": "2024-01-31T23:59:59Z",
+      "bonusPoints": 100,
+      "isActive": true,
+      "createdAt": "2024-01-01T09:00:00Z"
+    }
+  ]
+}
+```
+
+`isActive`: `starts_at <= NOW() <= ends_at` かつ `deleted_at IS NULL` の場合 `true`
+
+---
+
+#### `POST /api/admin/campaigns`
+
+キャンペーンを作成する。
+
+**リクエストボディ**
+
+| フィールド | 型 | 必須 | 説明 |
+|---|---|---|---|
+| `name` | string | yes | キャンペーン名（255文字以内） |
+| `description` | string | no | 説明（任意） |
+| `startsAt` | string (ISO 8601) | yes | 開始日時 |
+| `endsAt` | string (ISO 8601) | yes | 終了日時 |
+| `bonusPoints` | number | yes | 付与ポイント数（デフォルト 100） |
+
+**レスポンス `201`**
+
+```json
+{ "campaign": { "id": 1, ... } }
+```
+
+**エラーレスポンス**
+
+| ステータス | 条件 |
+|---|---|
+| `400` | バリデーションエラー |
+| `401` | 未ログイン |
+| `403` | 管理者以外 |
+| `409` | 期間が重複するアクティブキャンペーンが既に存在する |
+
+---
+
+#### `PATCH /api/admin/campaigns/[id]`
+
+キャンペーンを更新する。未指定フィールドは変更しない。
+
+**レスポンス `200`**: 更新後のキャンペーンオブジェクト
+
+**エラーレスポンス**
+
+| ステータス | 条件 |
+|---|---|
+| `401` | 未ログイン |
+| `403` | 管理者以外 |
+| `404` | 対象キャンペーン不存在 |
+| `409` | 期間が重複するアクティブキャンペーンが既に存在する |
+
+---
+
+#### `DELETE /api/admin/campaigns/[id]`
+
+キャンペーンを論理削除する（`deleted_at` をセット）。
+
+**レスポンス `200`**: `{ "ok": true }`
+
+**エラーレスポンス**
+
+| ステータス | 条件 |
+|---|---|
+| `401` | 未ログイン |
+| `403` | 管理者以外 |
+| `404` | 対象キャンペーン不存在 |
 
 ---
 
@@ -145,4 +245,15 @@ ORDER BY created_at DESC
 **処理条件**: 当日付与済みのデイリーポイントレコードが存在しない場合のみ付与する。
 
 **付与量**: 10pt / 日  
-**`expires_at`**: 付与当日の `23:59:59`
+**`expires_at`**: 付与当日の JST 23:59:59 を UTC に変換した値
+
+---
+
+## キャンペーンポイント付与
+
+初回ログイン時（新規ユーザー作成時）にアクティブなキャンペーンが存在する場合、ボーナスポイントを付与する。API エンドポイントは持たない。
+
+**処理条件**: `isNewUser === true` かつアクティブキャンペーン（`starts_at <= NOW() <= ends_at`）が存在する場合に付与する。
+
+**付与量**: キャンペーンの `bonus_points`（デフォルト 100pt）  
+**`expires_at`**: `NULL`（恒久ポイント）
