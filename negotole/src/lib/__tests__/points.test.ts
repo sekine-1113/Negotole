@@ -89,15 +89,20 @@ describe("grantDailyPoints", () => {
     expect(insertArg.userId).toBe(1);
     expect(insertArg.getPoint).toBe(10);
 
-    // expiresAt が当日の 23:59:59 であること
+    // expiresAt が JST 当日の 23:59:59 であること
+    // CI は UTC で動作するため、JST オフセット（+9h）を加えて比較する
+    const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
     const expiresAt = insertArg.expiresAt as Date;
     const now = new Date();
-    expect(expiresAt.getFullYear()).toBe(now.getFullYear());
-    expect(expiresAt.getMonth()).toBe(now.getMonth());
-    expect(expiresAt.getDate()).toBe(now.getDate());
-    expect(expiresAt.getHours()).toBe(23);
-    expect(expiresAt.getMinutes()).toBe(59);
-    expect(expiresAt.getSeconds()).toBe(59);
+    const nowJST = new Date(now.getTime() + JST_OFFSET_MS);
+    const expiresAtJST = new Date(expiresAt.getTime() + JST_OFFSET_MS);
+
+    expect(expiresAtJST.getUTCFullYear()).toBe(nowJST.getUTCFullYear());
+    expect(expiresAtJST.getUTCMonth()).toBe(nowJST.getUTCMonth());
+    expect(expiresAtJST.getUTCDate()).toBe(nowJST.getUTCDate());
+    expect(expiresAtJST.getUTCHours()).toBe(23);
+    expect(expiresAtJST.getUTCMinutes()).toBe(59);
+    expect(expiresAtJST.getUTCSeconds()).toBe(59);
   });
 });
 
