@@ -14,14 +14,16 @@ function formatRemaining(ms: number): string {
 }
 
 export function CountdownTimer({ hiddenAt }: { hiddenAt: string }) {
-  const [remaining, setRemaining] = useState(() => new Date(hiddenAt).getTime() - Date.now());
+  const [remaining, setRemaining] = useState<number | null>(null);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setRemaining(new Date(hiddenAt).getTime() - Date.now());
-    }, 1000);
+    const calc = () => new Date(hiddenAt).getTime() - Date.now();
+    setRemaining(calc());
+    const timer = setInterval(() => setRemaining(calc()), 1000);
     return () => clearInterval(timer);
   }, [hiddenAt]);
+
+  if (remaining === null) return null;
 
   return (
     <span className={remaining < 3600 * 1000 ? "text-red-500 font-bold" : "text-gray-400 text-sm"}>
