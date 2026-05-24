@@ -13,7 +13,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { getPointBalance, hasDailyPointToday, grantDailyPoints, consumeOnePoint } from "@/lib/points";
+import { getPointBalance, hasDailyPointToday, grantDailyPoints, consumeOnePoint, getActiveCampaign, grantCampaignPoints } from "@/lib/points";
 
 describe("getPointBalance", () => {
   beforeEach(() => {
@@ -118,6 +118,90 @@ describe("consumeOnePoint", () => {
     const [insertArg] = mockValues.mock.calls[0];
     expect(insertArg.userId).toBe(1);
     expect(insertArg.getPoint).toBe(-1);
+    expect(insertArg.expiresAt).toBeNull();
+  });
+});
+
+describe("hasDailyPointToday + grantDailyPoints integration", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("hasDailyPointToday が false の場合、grantDailyPoints を呼ぶべき", async () => {
+    // hasDailyPointToday → false
+    mockSelect.mockReturnValueOnce({
+      from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }),
+    });
+    const mockValues = vi.fn().mockResolvedValue(undefined);
+    mockInsert.mockReturnValueOnce({ values: mockValues });
+
+    const alreadyGranted = await hasDailyPointToday(1);
+    if (!alreadyGranted) {
+      await grantDailyPoints(1);
+    }
+
+    expect(alreadyGranted).toBe(false);
+    expect(mockInsert).toHaveBeenCalledOnce();
+  });
+
+  it("hasDailyPointToday が true の場合、grantDailyPoints を呼ばない", async () => {
+    // hasDailyPointToday → true
+    mockSelect.mockReturnValueOnce({
+      from: () => ({ where: () => ({ limit: () => Promise.resolve([{ id: 1 }]) }) }),
+    });
+
+    const alreadyGranted = await hasDailyPointToday(1);
+    if (!alreadyGranted) {
+      await grantDailyPoints(1);
+    }
+
+    expect(alreadyGranted).toBe(true);
+    expect(mockInsert).not.toHaveBeenCalled();
+  });
+});
+
+describe("getActiveCampaign", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("アクティブなキャンペーンがある場合はキャンペーンオブジェクトを返す", async () => {
+    const campaign = { id: 1, name: "テストキャンペーン", bonusPoints: 100 };
+    mockSelect.mockReturnValueOnce({
+      from: () => ({ where: () => ({ orderBy: () => ({ limit: () => Promise.resolve([campaign]) }) }) }),
+    });
+
+    const result = await getActiveCampaign();
+    expect(result).toEqual(campaign);
+  });
+
+  it("アクティブなキャンペーンがない場合は null を返す", async () => {
+    mockSelect.mockReturnValueOnce({
+      from: () => ({ where: () => ({ orderBy: () => ({ limit: () => Promise.resolve([]) }) }) }),
+    });
+
+    const result = await getActiveCampaign();
+    expect(result).toBeNull();
+  });
+});
+
+describe("grantCampaignPoints", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("userId=1 に +100pt、expiresAt=null で INSERT する", async () => {
+    const mockValues = vi.fn().mockResolvedValue(undefined);
+    mockInsert.mockReturnValueOnce({ values: mockValues });
+
+    await grantCampaignPoints(1, 100);
+
+    expect(mockInsert).toHaveBeenCalledOnce();
+    expect(mockValues).toHaveBeenCalledOnce();
+
+    const [insertArg] = mockValues.mock.calls[0];
+    expect(insertArg.userId).toBe(1);
+    expect(insertArg.getPoint).toBe(100);
     expect(insertArg.expiresAt).toBeNull();
   });
 });

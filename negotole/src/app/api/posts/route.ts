@@ -3,6 +3,7 @@ import { posts } from "@/lib/db/schema";
 import { and, gt, isNull, lt, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { consumeOnePoint, getPointBalance } from "@/lib/points";
+import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 const VALID_DURATIONS = [60, 180, 360, 720, 1440] as const;
@@ -75,6 +76,9 @@ export async function POST(request: NextRequest) {
   }).returning();
 
   await consumeOnePoint(userId);
+
+  revalidatePath("/");
+  revalidatePath("/post/new");
 
   return NextResponse.json({ post }, { status: 201 });
 }

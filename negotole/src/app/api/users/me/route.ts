@@ -13,7 +13,7 @@ export async function GET() {
 
   const userId = Number(session.user.id);
   const [user] = await db
-    .select({ id: users.id, name: users.name })
+    .select({ id: users.id, name: users.name, role: users.role })
     .from(users)
     .where(eq(users.id, userId))
     .limit(1);

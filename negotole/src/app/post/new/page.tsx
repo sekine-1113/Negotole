@@ -1,19 +1,18 @@
+import { auth } from "@/lib/auth";
+import { getPointBalance } from "@/lib/points";
 import { PostForm } from "@/components/PostForm";
 
-async function getPoints(): Promise<number> {
-  try {
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000";
-    const res = await fetch(`${baseUrl}/api/users/me`, { cache: "no-store" });
-    if (!res.ok) return 0;
-    const data = await res.json();
-    return data.points?.total ?? 0;
-  } catch {
-    return 0;
-  }
-}
-
 export default async function NewPostPage() {
-  const totalPoints = await getPoints();
+  const session = await auth();
+  let totalPoints = 0;
+  if (session?.user?.id) {
+    try {
+      const balance = await getPointBalance(Number(session.user.id));
+      totalPoints = balance.total;
+    } catch {
+      // ポイント取得失敗時は 0 を表示
+    }
+  }
 
   return (
     <main className="max-w-xl mx-auto px-4 py-8">
