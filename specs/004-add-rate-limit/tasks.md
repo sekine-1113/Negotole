@@ -15,9 +15,9 @@
 
 **Purpose**: Upstash 依存関係のインストールと環境変数の準備
 
-- [ ] T001 `@upstash/ratelimit` と `@upstash/redis` を `negotole/package.json` に追加する（`pnpm add @upstash/ratelimit @upstash/redis` を `negotole/` ディレクトリで実行）
-- [ ] T002 [P] Upstash Redis インスタンスのセットアップ手順をドキュメント化する（`docs/setup-upstash.md` に作成。環境変数 `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` の取得方法を記載）
-- [ ] T003 `.env.local.example` が存在しない場合は `negotole/.env.local.example` を作成し、`UPSTASH_REDIS_REST_URL` と `UPSTASH_REDIS_REST_TOKEN` のプレースホルダーを追記する
+- [x] T001 `@upstash/ratelimit` と `@upstash/redis` を `negotole/package.json` に追加する（`pnpm add @upstash/ratelimit @upstash/redis` を `negotole/` ディレクトリで実行）
+- [x] T002 [P] Upstash Redis インスタンスのセットアップ手順をドキュメント化する（`docs/setup-upstash.md` に作成。環境変数 `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN` の取得方法を記載）
+- [x] T003 `.env.local.example` が存在しない場合は `negotole/.env.local.example` を作成し、`UPSTASH_REDIS_REST_URL` と `UPSTASH_REDIS_REST_TOKEN` のプレースホルダーを追記する
 
 ---
 
@@ -27,8 +27,8 @@
 
 **⚠️ CRITICAL**: このフェーズが完了するまでユーザーストーリーの実装を始めない
 
-- [ ] T004 `negotole/src/lib/ratelimit.ts` を新規作成し、Upstash Redis クライアントと 3 つのリミッターインスタンス（`postWriteLimiter`・`authLimiter`・`adminLimiter`）をエクスポートする。各リミッターは `Ratelimit.slidingWindow()` を使用し、`research.md` の制限値を適用する
-- [ ] T005 `negotole/middleware.ts` に `/api/:path*` を matcher に追加し、リクエストパスに応じて適切なリミッターを呼び出す基本構造を実装する（429 レスポンス形式は `contracts/rate-limit.md` に従う）
+- [x] T004 `negotole/src/lib/ratelimit.ts` を新規作成し、Upstash Redis クライアントと 3 つのリミッターインスタンス（`postWriteLimiter`・`authLimiter`・`adminLimiter`）をエクスポートする。各リミッターは `Ratelimit.slidingWindow()` を使用し、`research.md` の制限値を適用する
+- [x] T005 `negotole/middleware.ts` に `/api/:path*` を matcher に追加し、リクエストパスに応じて適切なリミッターを呼び出す基本構造を実装する（429 レスポンス形式は `contracts/rate-limit.md` に従う）
 
 **Checkpoint**: `src/lib/ratelimit.ts` が正しくエクスポートされ、middleware がコンパイルエラーなく動作すること
 
@@ -42,9 +42,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] `negotole/middleware.ts` の `/api/posts` ルートに対し POST メソッドのみ `postWriteLimiter` を適用する。識別子は `req.auth?.user?.id`（ユーザー ID）とし、未認証の場合は制限をスキップする（401 は Route Handler に委ねる）
-- [ ] T007 [US1] 429 レスポンスに `Retry-After` ヘッダーと `{ "error": "Too many requests", "retryAfter": N }` ボディを含めることを確認する（`contracts/rate-limit.md` 準拠）
-- [ ] T008 [US1] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認し、必要に応じてエラーを修正する
+- [x] T006 [US1] `negotole/middleware.ts` の `/api/posts` ルートに対し POST メソッドのみ `postWriteLimiter` を適用する。識別子は `req.auth?.user?.id`（ユーザー ID）とし、未認証の場合は制限をスキップする（401 は Route Handler に委ねる）
+- [x] T007 [US1] 429 レスポンスに `Retry-After` ヘッダーと `{ "error": "Too many requests", "retryAfter": N }` ボディを含めることを確認する（`contracts/rate-limit.md` 準拠）
+- [x] T008 [US1] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認し、必要に応じてエラーを修正する
 
 **Checkpoint**: User Story 1 完了 — 投稿 API でユーザー単位のレート制限が動作する
 
@@ -58,8 +58,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] `negotole/middleware.ts` の `/api/auth/:path*` ルートに `authLimiter` を適用する。識別子は `req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown'` とする
-- [ ] T010 [US2] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認する
+- [x] T009 [US2] `negotole/middleware.ts` の `/api/auth/:path*` ルートに `authLimiter` を適用する。識別子は `req.headers.get('x-forwarded-for') ?? req.headers.get('x-real-ip') ?? 'unknown'` とする
+- [x] T010 [US2] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認する
 
 **Checkpoint**: User Story 2 完了 — 認証エンドポイントで IP 単位のレート制限が動作する
 
@@ -73,8 +73,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T011 [US3] `negotole/middleware.ts` の `/api/admin/:path*` ルートに `adminLimiter` を適用する。識別子は `req.auth?.user?.id`（管理者ユーザー ID）とする
-- [ ] T012 [US3] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認する
+- [x] T011 [US3] `negotole/middleware.ts` の `/api/admin/:path*` ルートに `adminLimiter` を適用する。識別子は `req.auth?.user?.id`（管理者ユーザー ID）とする
+- [x] T012 [US3] `pnpm tsc --noEmit` と `pnpm lint` が通ることを確認する
 
 **Checkpoint**: User Story 3 完了 — すべての API グループにレート制限が適用された
 
@@ -84,10 +84,10 @@
 
 **Purpose**: ドキュメント更新と最終確認
 
-- [ ] T013 [P] `docs/api.md` に各エンドポイントグループの 429 エラーレスポンスを追記する（`contracts/rate-limit.md` の内容をもとに）
-- [ ] T014 [P] `docs/todo.md` の item #3（レート制限なし）を対応済みとしてマークする
-- [ ] T015 `pnpm test` を実行し、全テストが通過することを確認する（SC-004）
-- [ ] T016 [P] `negotole/.env.local.example`（またはプロジェクト README）に Upstash Redis のセットアップ手順を記載する
+- [x] T013 [P] `docs/api.md` に各エンドポイントグループの 429 エラーレスポンスを追記する（`contracts/rate-limit.md` の内容をもとに）
+- [x] T014 [P] `docs/todo.md` の item #3（レート制限なし）を対応済みとしてマークする
+- [x] T015 `pnpm test` を実行し、全テストが通過することを確認する（SC-004）
+- [x] T016 [P] `negotole/.env.local.example`（またはプロジェクト README）に Upstash Redis のセットアップ手順を記載する
 
 ---
 
