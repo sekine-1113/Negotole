@@ -1,0 +1,32 @@
+# 環境変数
+.env*
+
+# Next.js
+negotole/.next/
+negotole/out/
+
+# 依存パッケージ
+negotole/node_modules/
+
+# ビルド成果物
+negotole/dist/
+
+# Drizzle マイグレーション生成物（生成コマンドで再作成できるため）
+negotole/drizzle/
+
+# pnpm
+negotole/.pnpm-store/
+
+# TypeScript キャッシュ
+negotole/*.tsbuildinfo
+negotole/.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# エディタ
+.vscode/
+.idea/
+*.swp
+*.swo
