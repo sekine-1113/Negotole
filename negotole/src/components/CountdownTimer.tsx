@@ -18,9 +18,13 @@ export function CountdownTimer({ hiddenAt }: { hiddenAt: string }) {
 
   useEffect(() => {
     const calc = () => new Date(hiddenAt).getTime() - Date.now();
-    setRemaining(calc());
+    // setState はコールバック内でのみ呼ぶ（エフェクト本体での同期呼び出しを避ける）
+    const initial = setTimeout(() => setRemaining(calc()), 0);
     const timer = setInterval(() => setRemaining(calc()), 1000);
-    return () => clearInterval(timer);
+    return () => {
+      clearTimeout(initial);
+      clearInterval(timer);
+    };
   }, [hiddenAt]);
 
   if (remaining === null) return null;
