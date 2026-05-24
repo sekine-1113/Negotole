@@ -1,8 +1,7 @@
 import { db } from "@/lib/db";
-import { posts } from "@/lib/db/schema";
+import { posts, userPoints } from "@/lib/db/schema";
 import { and, gt, isNull, lt, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { consumeOnePoint, getPointBalance } from "@/lib/points";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -62,23 +61,44 @@ export async function POST(request: NextRequest) {
   }
 
   const userId = Number(session.user.id);
-  const { total } = await getPointBalance(userId);
-  if (total < 1) {
-    return NextResponse.json({ error: "Insufficient points" }, { status: 402 });
-  }
-
   const hiddenAt = new Date(Date.now() + duration * 60 * 1000);
 
-  const [post] = await db.insert(posts).values({
-    userId,
-    content: content.trim(),
-    hiddenAt,
-  }).returning();
+  const result = await db.transaction(async (tx) => {
+    // ポイント残高をロックして取得（他リクエストの割り込みを防ぐ）
+    const balanceRows = await tx.execute(sql`
+      SELECT COALESCE(SUM(get_point), 0) AS total
+      FROM user_point
+      WHERE user_id = ${userId}
+        AND deleted_at IS NULL
+        AND (expires_at IS NULL OR expires_at > NOW())
+      FOR UPDATE
+    `);
+    const total = Number(((balanceRows as unknown) as { rows: { total: string }[] }).rows[0]?.total ?? 0);
+    if (total < 1) {
+      return null;
+    }
 
-  await consumeOnePoint(userId);
+    const [post] = await tx.insert(posts).values({
+      userId,
+      content: content.trim(),
+      hiddenAt,
+    }).returning();
+
+    await tx.insert(userPoints).values({
+      userId,
+      getPoint: -1,
+      expiresAt: null,
+    });
+
+    return post;
+  });
+
+  if (!result) {
+    return NextResponse.json({ error: "Insufficient points" }, { status: 402 });
+  }
 
   revalidatePath("/");
   revalidatePath("/post/new");
 
-  return NextResponse.json({ post }, { status: 201 });
+  return NextResponse.json({ post: result }, { status: 201 });
 }
