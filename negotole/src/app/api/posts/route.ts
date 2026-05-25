@@ -64,14 +64,17 @@ export async function POST(request: NextRequest) {
   const hiddenAt = new Date(Date.now() + duration * 60 * 1000);
 
   const result = await db.transaction(async (tx) => {
-    // ポイント残高をロックして取得（他リクエストの割り込みを防ぐ）
+    // FOR UPDATE はサブクエリで行ロックし、外側で集計する
     const balanceRows = await tx.execute(sql`
       SELECT COALESCE(SUM(get_point), 0) AS total
-      FROM user_point
-      WHERE user_id = ${userId}
-        AND deleted_at IS NULL
-        AND (expires_at IS NULL OR expires_at > NOW())
-      FOR UPDATE
+      FROM (
+        SELECT get_point
+        FROM user_point
+        WHERE user_id = ${userId}
+          AND deleted_at IS NULL
+          AND (expires_at IS NULL OR expires_at > NOW())
+        FOR UPDATE
+      ) locked
     `);
     const total = Number(((balanceRows as unknown) as { rows: { total: string }[] }).rows[0]?.total ?? 0);
     if (total < 1) {
