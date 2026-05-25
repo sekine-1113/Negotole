@@ -22,10 +22,8 @@
   2. ~~投稿作成のトランザクション欠如~~（対応済み: specs/003-fix-post-race-condition）
   ~~→ db.transaction() で括る必要があります。~~
 
-  3. レート制限なし
-  ログイン試行・POST /api/posts・管理者 API に一切レート制限がありません。ポイントが 0
-  になっても投稿試行のリクエストを大量に送れます。→ Upstash Ratelimit や Vercel Edge Middleware
-  での IP 制限が必要。
+  3. ~~レート制限なし~~（対応済み: specs/004-add-rate-limit）
+  ~~ログイン試行・POST /api/posts・管理者 API に一切レート制限がありません。→ Upstash Ratelimit や Vercel Edge Middleware での IP 制限が必要。~~
 
   ---
   🟡 中リスク
