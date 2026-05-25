@@ -33,10 +33,10 @@
   などが未設定。Next.js はデフォルトで一部を設定しますが、Content-Security-Policy
   は自分で定義する必要があります。~~
 
-  5. cursor パラメータの検証が甘い
-  const cursorId = cursor ? Number(Buffer.from(cursor, "base64").toString()) : null;
-  // NaN のままクエリに渡される可能性
-  → Number.isInteger() チェックが必要。
+  ~~5. cursor パラメータの検証が甘い~~（対応済み: specs/006-fix-cursor-validation）
+  ~~const cursorId = cursor ? Number(Buffer.from(cursor, "base64").toString()) : null;~~
+  ~~// NaN のままクエリに渡される可能性~~
+  ~~→ Number.isInteger() チェックが必要。~~
 
   6. 環境変数の起動時バリデーションなし
   AUTH_SECRET 等が未設定でもサーバーは起動します。Zod で env.ts を作成して起動時に検証すべきです。
