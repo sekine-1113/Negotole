@@ -12,7 +12,14 @@ export async function GET(request: NextRequest) {
   const cursor = searchParams.get("cursor");
   const limit = Math.min(Number(searchParams.get("limit") ?? 20), 50);
 
-  const cursorId = cursor ? Number(Buffer.from(cursor, "base64").toString()) : null;
+  let cursorId: number | null = null;
+  if (cursor) {
+    const decoded = Number(Buffer.from(cursor, "base64").toString());
+    if (!Number.isSafeInteger(decoded) || decoded <= 0) {
+      return NextResponse.json({ error: "Invalid cursor" }, { status: 400 });
+    }
+    cursorId = decoded;
+  }
 
   const rows = await db
     .select({
