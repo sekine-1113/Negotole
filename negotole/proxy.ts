@@ -17,7 +17,7 @@ async function applyRateLimit(
   return null;
 }
 
-export default auth(async (req) => {
+export const proxy = auth(async (req) => {
   const path = req.nextUrl.pathname;
   const method = req.method;
 

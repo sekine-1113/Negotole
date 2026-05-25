@@ -28,10 +28,10 @@
   ---
   🟡 中リスク
 
-  4. セキュリティヘッダー未設定
-  next.config.ts に X-Frame-Options・X-Content-Type-Options・Referrer-Policy・Permissions-Policy
+  4. ~~セキュリティヘッダー未設定~~（対応済み: specs/005-add-security-headers）
+  ~~next.config.ts に X-Frame-Options・X-Content-Type-Options・Referrer-Policy・Permissions-Policy
   などが未設定。Next.js はデフォルトで一部を設定しますが、Content-Security-Policy
-  は自分で定義する必要があります。
+  は自分で定義する必要があります。~~
 
   5. cursor パラメータの検証が甘い
   const cursorId = cursor ? Number(Buffer.from(cursor, "base64").toString()) : null;
