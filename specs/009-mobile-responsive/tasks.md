@@ -71,7 +71,7 @@ description: "Task list for mobile-responsive"
 **Purpose**: ビルド確認と最終検証
 
 - [x] T007 [P] `pnpm build` を `negotole/` ディレクトリで実行し、本番ビルドが警告・エラーなく完了することを確認する。
-- [ ] T008 [P] Chrome DevTools で画面幅 320px（最小）・375px・768px・1024px の各ブレークポイントで横スクロールが発生しないことを目視確認する（SC-001 対応）。
+- [x] T008 [P] Chrome DevTools で画面幅 320px（最小）・375px・768px・1024px の各ブレークポイントで横スクロールが発生しないことを目視確認する（SC-001 対応）。
 
 ---
 
