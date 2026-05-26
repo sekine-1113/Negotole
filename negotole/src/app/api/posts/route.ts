@@ -1,6 +1,7 @@
-import { db } from "@/lib/db";
+import { fetchPosts } from "@/lib/posts";
 import { posts, userPoints } from "@/lib/db/schema";
-import { and, gt, isNull, lt, sql } from "drizzle-orm";
+import { sql } from "drizzle-orm";
+import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,7 +11,7 @@ const VALID_DURATIONS = [60, 180, 360, 720, 1440] as const;
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
-  const limit = Math.min(Number(searchParams.get("limit") ?? 20), 50);
+  const limit = Number(searchParams.get("limit") ?? 20);
 
   let cursorId: number | null = null;
   if (cursor) {
@@ -21,30 +22,8 @@ export async function GET(request: NextRequest) {
     cursorId = decoded;
   }
 
-  const rows = await db
-    .select({
-      id: posts.id,
-      content: posts.content,
-      hiddenAt: posts.hiddenAt,
-      createdAt: posts.createdAt,
-    })
-    .from(posts)
-    .where(
-      and(
-        gt(posts.hiddenAt, sql`NOW()`),
-        isNull(posts.deletedAt),
-        cursorId ? lt(posts.id, cursorId) : undefined
-      )
-    )
-    .orderBy(sql`${posts.id} DESC`)
-    .limit(limit + 1);
-
-  const hasMore = rows.length > limit;
-  const data = hasMore ? rows.slice(0, limit) : rows;
-  const nextCursor =
-    hasMore ? Buffer.from(String(data[data.length - 1].id)).toString("base64") : null;
-
-  return NextResponse.json({ posts: data, nextCursor });
+  const result = await fetchPosts({ cursorId, limit });
+  return NextResponse.json(result);
 }
 
 export async function POST(request: NextRequest) {
