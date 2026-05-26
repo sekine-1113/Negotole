@@ -10,7 +10,7 @@ export default async function HomePage() {
   }
 
   return (
-    <main className="max-w-xl mx-auto px-4 py-8">
+    <main className="px-4 py-8 md:max-w-4xl md:mx-auto">
       <Timeline initialPosts={data.posts} initialNextCursor={data.nextCursor} />
     </main>
   );
