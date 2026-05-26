@@ -15,7 +15,7 @@ export default async function NewPostPage() {
   }
 
   return (
-    <main className="max-w-xl mx-auto px-4 py-8">
+    <main className="px-4 py-8 md:max-w-4xl md:mx-auto">
       <h1 className="text-xl font-bold mb-6">投稿する</h1>
       <PostForm totalPoints={totalPoints} />
     </main>

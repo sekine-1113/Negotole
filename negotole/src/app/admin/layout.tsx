@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           サイトへ戻る
         </Link>
       </nav>
-      <main className="p-6">{children}</main>
+      <main className="p-4 sm:p-6">{children}</main>
     </div>
   );
 }

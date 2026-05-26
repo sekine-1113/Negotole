@@ -17,17 +17,17 @@ export async function Header() {
   }
 
   return (
-    <header className="border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+    <header className="border-b border-gray-200 px-3 py-3 sm:px-4 flex items-center justify-between">
       <Link href="/" className="font-bold text-lg">
         Negotole
       </Link>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {session?.user ? (
           <>
             <PointBadge total={totalPoints} />
             <Link
               href="/post/new"
-              className="text-sm bg-black text-white rounded-full px-4 py-1.5 hover:bg-gray-800"
+              className="text-xs bg-black text-white rounded-full px-3 py-1 min-h-[44px] inline-flex items-center hover:bg-gray-800 sm:text-sm sm:px-4 sm:py-1.5"
             >
               投稿する
             </Link>
@@ -37,7 +37,7 @@ export async function Header() {
                 await signOut({ redirectTo: "/" });
               }}
             >
-              <button type="submit" className="text-sm text-gray-500 hover:text-gray-700">
+              <button type="submit" className="text-xs text-gray-500 hover:text-gray-700 min-h-[44px] sm:text-sm">
                 ログアウト
               </button>
             </form>
@@ -49,7 +49,7 @@ export async function Header() {
               await signIn("google", { redirectTo: "/" });
             }}
           >
-            <button type="submit" className="text-sm bg-black text-white rounded-full px-4 py-1.5 hover:bg-gray-800">
+            <button type="submit" className="text-xs bg-black text-white rounded-full px-3 py-1 min-h-[44px] inline-flex items-center hover:bg-gray-800 sm:text-sm sm:px-4 sm:py-1.5">
               Google でログイン
             </button>
           </form>

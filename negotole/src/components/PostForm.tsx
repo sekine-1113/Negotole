@@ -58,7 +58,7 @@ export function PostForm({ totalPoints }: Props) {
           maxLength={255}
           placeholder="今どうしてる？"
           rows={4}
-          className="w-full border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+          className="w-full border border-gray-200 rounded-lg p-3 resize-none focus:outline-none focus:ring-2 focus:ring-black text-base"
         />
         <p className="text-right text-sm text-gray-400">{content.length} / 255文字</p>
       </div>
