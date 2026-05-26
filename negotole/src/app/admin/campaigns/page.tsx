@@ -38,6 +38,7 @@ export default async function AdminCampaignsPage() {
       {items.length === 0 ? (
         <p className="text-gray-500">キャンペーンがありません。</p>
       ) : (
+        <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm">
           <thead>
             <tr className="bg-gray-100">
@@ -79,6 +80,7 @@ export default async function AdminCampaignsPage() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
