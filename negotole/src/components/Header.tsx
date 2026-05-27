@@ -1,10 +1,19 @@
 import { auth, signIn, signOut } from "@/lib/auth";
-import { getPointBalance } from "@/lib/points";
+import { getPointBalance, hasDailyPointToday, grantDailyPoints } from "@/lib/points";
 import Link from "next/link";
 import { PointBadge } from "./PointBadge";
 
 export async function Header() {
   const session = await auth();
+
+  if (session?.user?.id) {
+    try {
+      const alreadyGranted = await hasDailyPointToday(Number(session.user.id));
+      if (!alreadyGranted) await grantDailyPoints(Number(session.user.id));
+    } catch {
+      // サイレント失敗 — ユーザー操作を阻害しない（FR-005）
+    }
+  }
 
   let totalPoints = 0;
   if (session?.user?.id) {
