@@ -1,4 +1,5 @@
 import { and, gt, isNull, sql, sum } from "drizzle-orm";
+import { unstable_cache } from "next/cache";
 import { db } from "./db";
 import { campaigns, userPoints } from "./db/schema";
 import type { Campaign } from "./db/schema";
@@ -81,6 +82,14 @@ export async function grantDailyPoints(userId: number): Promise<void> {
     getPoint: 10,
     expiresAt: todayEnd,
   });
+}
+
+export function getCachedPointBalance(userId: number): Promise<{ daily: number; permanent: number; total: number }> {
+  return unstable_cache(
+    () => getPointBalance(userId),
+    [`point-balance-${userId}`],
+    { tags: [`user-points-${userId}`], revalidate: false }
+  )();
 }
 
 export async function consumeOnePoint(userId: number): Promise<void> {

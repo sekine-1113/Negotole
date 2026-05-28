@@ -3,7 +3,7 @@ import { posts, userPoints } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
-import { revalidatePath } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 const VALID_DURATIONS = [60, 180, 360, 720, 1440] as const;
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   }
 
   const result = await fetchPosts({ cursorId, limit });
-  return NextResponse.json(result);
+  return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request: NextRequest) {
@@ -86,8 +86,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Insufficient points" }, { status: 402 });
   }
 
-  revalidatePath("/");
-  revalidatePath("/post/new");
+  revalidateTag(`user-points-${userId}`, "max");
 
   return NextResponse.json({ post: result }, { status: 201 });
 }
