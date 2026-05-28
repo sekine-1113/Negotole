@@ -1,5 +1,6 @@
 import { auth, signIn, signOut } from "@/lib/auth";
 import { getCachedPointBalance, hasDailyPointToday, grantDailyPoints } from "@/lib/points";
+import { Moon } from "lucide-react";
 import Link from "next/link";
 import { PointBadge } from "./PointBadge";
 
@@ -28,43 +29,56 @@ export async function Header() {
   }
 
   return (
-    <header className="border-b border-gray-200 px-3 py-3 sm:px-4 flex items-center justify-between">
-      <Link href="/" className="font-bold text-lg">
-        Negotole
-      </Link>
-      <div className="flex items-center gap-2 sm:gap-3">
-        {session?.user ? (
-          <>
-            <PointBadge total={totalPoints} />
-            <Link
-              href="/post/new"
-              className="text-xs bg-black text-white rounded-full px-3 py-1 min-h-[44px] inline-flex items-center hover:bg-gray-800 sm:text-sm sm:px-4 sm:py-1.5"
-            >
-              投稿する
-            </Link>
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-slate-950/60 border-b border-indigo-950/50 px-4 py-3">
+      <div className="max-w-xl mx-auto flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 animate-[float_4s_ease-in-out_infinite]">
+            <Moon className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h1 className="text-xl font-black tracking-wider bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
+              negotole
+            </h1>
+            <p className="text-[10px] text-indigo-300/80 tracking-widest font-bold -mt-1">
+              寝言る - 夢うつつのタイムライン
+            </p>
+          </div>
+        </Link>
+
+        <div className="flex items-center gap-2 sm:gap-3">
+          {session?.user ? (
+            <>
+              <PointBadge total={totalPoints} />
+              <form
+                action={async () => {
+                  "use server";
+                  await signOut({ redirectTo: "/" });
+                }}
+              >
+                <button
+                  type="submit"
+                  className="text-xs text-indigo-300/80 hover:text-indigo-100 min-h-[44px] sm:text-sm transition"
+                >
+                  ログアウト
+                </button>
+              </form>
+            </>
+          ) : (
             <form
               action={async () => {
                 "use server";
-                await signOut({ redirectTo: "/" });
+                await signIn("google", { redirectTo: "/" });
               }}
             >
-              <button type="submit" className="text-xs text-gray-500 hover:text-gray-700 min-h-[44px] sm:text-sm">
-                ログアウト
+              <button
+                type="submit"
+                className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-4 py-2 min-h-[44px] inline-flex items-center shadow-lg shadow-indigo-500/20 transition sm:text-sm"
+              >
+                Google でログイン
               </button>
             </form>
-          </>
-        ) : (
-          <form
-            action={async () => {
-              "use server";
-              await signIn("google", { redirectTo: "/" });
-            }}
-          >
-            <button type="submit" className="text-xs bg-black text-white rounded-full px-3 py-1 min-h-[44px] inline-flex items-center hover:bg-gray-800 sm:text-sm sm:px-4 sm:py-1.5">
-              Google でログイン
-            </button>
-          </form>
-        )}
+          )}
+        </div>
       </div>
     </header>
   );
