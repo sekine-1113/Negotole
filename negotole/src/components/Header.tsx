@@ -1,5 +1,5 @@
 import { auth, signIn, signOut } from "@/lib/auth";
-import { getPointBalance, hasDailyPointToday, grantDailyPoints } from "@/lib/points";
+import { getCachedPointBalance, hasDailyPointToday, grantDailyPoints } from "@/lib/points";
 import Link from "next/link";
 import { PointBadge } from "./PointBadge";
 
@@ -20,7 +20,7 @@ export async function Header() {
   let totalPoints = 0;
   if (session?.user?.id) {
     try {
-      const balance = await getPointBalance(Number(session.user.id));
+      const balance = await getCachedPointBalance(Number(session.user.id));
       totalPoints = balance.total;
     } catch {
       // ポイント取得失敗時は 0 を表示
