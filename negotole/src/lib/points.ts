@@ -1,4 +1,4 @@
-import { and, gt, isNull, lt, or, sql, sum } from "drizzle-orm";
+import { and, gt, isNull, sql, sum } from "drizzle-orm";
 import { db } from "./db";
 import { campaigns, userPoints } from "./db/schema";
 import type { Campaign } from "./db/schema";
@@ -23,18 +23,6 @@ function getJSTDayBounds(): { todayStart: Date; todayEnd: Date } {
 
 export async function getPointBalance(userId: number): Promise<{ daily: number; permanent: number; total: number }> {
   const now = new Date();
-  const { todayEnd } = getJSTDayBounds();
-
-  const rows = await db
-    .select({ total: sum(userPoints.getPoint) })
-    .from(userPoints)
-    .where(
-      and(
-        sql`${userPoints.userId} = ${userId}`,
-        isNull(userPoints.deletedAt),
-        or(isNull(userPoints.expiresAt), gt(userPoints.expiresAt, now))
-      )
-    );
 
   const dailyRows = await db
     .select({ total: sum(userPoints.getPoint) })
@@ -43,8 +31,7 @@ export async function getPointBalance(userId: number): Promise<{ daily: number; 
       and(
         sql`${userPoints.userId} = ${userId}`,
         isNull(userPoints.deletedAt),
-        gt(userPoints.expiresAt, now),
-        lt(userPoints.expiresAt, todayEnd)
+        gt(userPoints.expiresAt, now)
       )
     );
 
@@ -59,11 +46,10 @@ export async function getPointBalance(userId: number): Promise<{ daily: number; 
       )
     );
 
-  const total = Number(rows[0]?.total ?? 0);
   const daily = Number(dailyRows[0]?.total ?? 0);
   const permanent = Number(permanentRows[0]?.total ?? 0);
 
-  return { daily, permanent, total };
+  return { daily, permanent, total: daily + permanent };
 }
 
 export async function hasDailyPointToday(userId: number): Promise<boolean> {
@@ -98,10 +84,11 @@ export async function grantDailyPoints(userId: number): Promise<void> {
 }
 
 export async function consumeOnePoint(userId: number): Promise<void> {
+  const { todayEnd } = getJSTDayBounds();
   await db.insert(userPoints).values({
     userId,
     getPoint: -1,
-    expiresAt: null,
+    expiresAt: todayEnd,
   });
 }
 

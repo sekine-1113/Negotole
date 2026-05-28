@@ -22,9 +22,8 @@ describe("getPointBalance", () => {
 
   it("total・daily・permanent を正しく返す", async () => {
     mockSelect
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: "15" }]) }) })
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: "10" }]) }) })
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: "5" }]) }) });
+      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: "10" }]) }) })  // daily
+      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: "5" }]) }) });   // permanent
 
     const result = await getPointBalance(1);
 
@@ -35,9 +34,8 @@ describe("getPointBalance", () => {
 
   it("レコードがない場合は 0 を返す", async () => {
     mockSelect
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: null }]) }) })
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: null }]) }) })
-      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: null }]) }) });
+      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: null }]) }) })  // daily
+      .mockReturnValueOnce({ from: () => ({ where: () => Promise.resolve([{ total: null }]) }) }); // permanent
 
     const result = await getPointBalance(99);
 
@@ -111,7 +109,7 @@ describe("consumeOnePoint", () => {
     vi.clearAllMocks();
   });
 
-  it("userId=1 に -1pt、expiresAt=null で INSERT する", async () => {
+  it("userId=1 に -1pt、当日 23:59:59 の expiresAt で INSERT する", async () => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
     mockInsert.mockReturnValueOnce({ values: mockValues });
 
@@ -123,7 +121,20 @@ describe("consumeOnePoint", () => {
     const [insertArg] = mockValues.mock.calls[0];
     expect(insertArg.userId).toBe(1);
     expect(insertArg.getPoint).toBe(-1);
-    expect(insertArg.expiresAt).toBeNull();
+
+    // expiresAt が JST 当日の 23:59:59 であること（grantDailyPoints と同じ失効タイミング）
+    const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
+    const expiresAt = insertArg.expiresAt as Date;
+    const now = new Date();
+    const nowJST = new Date(now.getTime() + JST_OFFSET_MS);
+    const expiresAtJST = new Date(expiresAt.getTime() + JST_OFFSET_MS);
+
+    expect(expiresAtJST.getUTCFullYear()).toBe(nowJST.getUTCFullYear());
+    expect(expiresAtJST.getUTCMonth()).toBe(nowJST.getUTCMonth());
+    expect(expiresAtJST.getUTCDate()).toBe(nowJST.getUTCDate());
+    expect(expiresAtJST.getUTCHours()).toBe(23);
+    expect(expiresAtJST.getUTCMinutes()).toBe(59);
+    expect(expiresAtJST.getUTCSeconds()).toBe(59);
   });
 });
 

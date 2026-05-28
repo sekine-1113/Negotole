@@ -9,9 +9,11 @@ export async function Header() {
   if (session?.user?.id) {
     try {
       const alreadyGranted = await hasDailyPointToday(Number(session.user.id));
-      if (!alreadyGranted) await grantDailyPoints(Number(session.user.id));
+      if (!alreadyGranted) {
+        await grantDailyPoints(Number(session.user.id));
+      }
     } catch {
-      // サイレント失敗 — ユーザー操作を阻害しない（FR-005）
+      // サイレント失敗（FR-005）
     }
   }
 
