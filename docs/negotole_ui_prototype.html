@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>negotole（寝言る）- 儚く消える、夜のつぶやき</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts (Rounded Mplus & Inter) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-family: 'M PLUS Rounded 1c', 'Inter', sans-serif;
+      background: linear-gradient(135deg, #0b0f19 0%, #111827 50%, #1e1b4b 100%);
+      background-attachment: fixed;
+      color: #e2e8f0;
+    }
+    /* カスタムスクロールバー */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(99, 102, 241, 0.3);
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(99, 102, 241, 0.6);
+    }
+    /* 夢のような浮遊感のアニメーション */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+    }
+    .floating-logo {
+      animation: float 4s ease-in-out infinite;
+    }
+    /* 星の瞬き */
+    @keyframes pulse {
+      0%, 100% { opacity: 0.2; }
+      50% { opacity: 0.8; }
+    }
+    .star {
+      animation: pulse 3s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="min-h-screen relative overflow-x-hidden pb-20">
+
+  <!-- 背景の装飾的な星（モック用） -->
+  <div class="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="star absolute top-12 left-1/4 w-1 h-1 bg-white rounded-full"></div>
+    <div class="star absolute top-32 right-1/4 w-1.5 h-1.5 bg-indigo-300 rounded-full" style="animation-delay: 1s;"></div>
+    <div class="star absolute top-2/3 left-10 w-1 h-1 bg-purple-300 rounded-full" style="animation-delay: 2s;"></div>
+    <div class="star absolute top-3/4 right-12 w-2 h-2 bg-indigo-200 rounded-full" style="animation-delay: 1.5s;"></div>
+    <div class="star absolute top-1/3 right-10 w-1 h-1 bg-white rounded-full" style="animation-delay: 0.5s;"></div>
+  </div>
+
+  <!-- ヘッダー -->
+  <header class="sticky top-0 z-40 backdrop-blur-md bg-slate-950/60 border-b border-indigo-950/50 px-4 py-3">
+    <div class="max-w-xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="switchView('timeline')">
+        <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 floating-logo">
+          <i data-lucide="moon" class="w-5 h-5 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-xl font-black tracking-wider bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">negotole</h1>
+          <p class="text-[10px] text-indigo-300/80 tracking-widest font-bold -mt-1">寝言る - 夢うつつのタイムライン</p>
+        </div>
+      </div>
+
+      <!-- トータルポイント表示（ヘッダー簡易版） -->
+      <div class="bg-indigo-950/60 border border-indigo-500/30 rounded-full px-3.5 py-1.5 flex items-center gap-2 backdrop-blur-sm cursor-pointer hover:border-indigo-500/60 transition" onclick="switchView('mypage')">
+        <div class="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center shadow-sm">
+          <i data-lucide="star" class="w-2.5 h-2.5 text-slate-900 fill-slate-900"></i>
+        </div>
+        <span class="text-xs text-indigo-100 font-bold"><span id="header-total-points" class="text-amber-300 text-sm font-black">50</span> pt</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- 3つのメインコンテンツ領域 (SPA切り替え) -->
+  <main class="max-w-xl mx-auto px-4 mt-6 relative z-10">
+
+    <!-- ==============================================
+         A. タイムライン画面
+         ============================================== -->
+    <div id="view-timeline" class="space-y-4">
+
+      <!-- タイムライン見出し -->
+      <div class="flex items-center justify-between px-1 mb-2">
+        <h2 class="text-sm font-bold text-indigo-300 flex items-center gap-1.5">
+          <i data-lucide="align-left" class="w-4 h-4"></i>
+          ただいま浮遊している寝言
+        </h2>
+        <span class="text-[11px] text-indigo-400/80 bg-indigo-950/40 px-2 py-0.5 rounded-full border border-indigo-950">
+          現在漂う夢: <span id="active-count" class="font-bold text-indigo-300">3</span> 件
+        </span>
+      </div>
+
+      <!-- タイムラインエリア -->
+      <section id="timeline" class="space-y-4">
+        <!-- JSで動的に構築 -->
+      </section>
+    </div>
+
+    <!-- ==============================================
+         B. マイページ画面
+         ============================================== -->
+    <div id="view-mypage" class="hidden space-y-6">
+
+      <!-- プロフィール・ポイントステータス -->
+      <section class="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-6 backdrop-blur-md shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-purple-500/40 to-transparent"></div>
+
+        <div class="flex items-center gap-4 mb-6">
+          <div class="w-14 h-14 rounded-full bg-gradient-to-tr from-purple-600 to-pink-500 flex items-center justify-center text-white shadow-lg">
+            <i data-lucide="user" class="w-7 h-7"></i>
+          </div>
+          <div>
+            <h2 class="text-lg font-bold text-indigo-100">あなたの夢うつつ</h2>
+            <p class="text-xs text-slate-400">ポイントを消費してタイムラインに寝言を放てます</p>
+          </div>
+        </div>
+
+        <!-- ポイント詳細カード -->
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2.5">保有ポイントの内訳</h3>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+          <!-- 期間限定ポイント -->
+          <div class="bg-slate-950/70 border border-pink-500/20 rounded-xl p-3.5 relative">
+            <span class="absolute top-2.5 right-2.5 bg-pink-500/10 text-pink-400 text-[9px] px-1.5 py-0.5 rounded-full font-bold">本日中有効</span>
+            <span class="text-[10px] text-slate-400 block mb-1">期間限定ポイント</span>
+            <div class="flex items-baseline gap-1">
+              <span id="p-temp-val" class="text-2xl font-black text-pink-400">30</span>
+              <span class="text-xs text-slate-400">pt</span>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2">※投稿時に最優先で消費されます</p>
+          </div>
+
+          <!-- 恒久ポイント -->
+          <div class="bg-slate-950/70 border border-indigo-500/20 rounded-xl p-3.5 relative">
+            <span class="absolute top-2.5 right-2.5 bg-indigo-500/10 text-indigo-400 text-[9px] px-1.5 py-0.5 rounded-full font-bold">期限なし</span>
+            <span class="text-[10px] text-slate-400 block mb-1">恒久ポイント</span>
+            <div class="flex items-baseline gap-1">
+              <span id="p-perm-val" class="text-2xl font-black text-indigo-300">20</span>
+              <span class="text-xs text-slate-400">pt</span>
+            </div>
+            <p class="text-[9px] text-slate-500 mt-2">キャンペーン等で付与されます</p>
+          </div>
+        </div>
+
+        <!-- 注意書き -->
+        <div class="p-3 bg-slate-950/40 rounded-xl border border-indigo-950/40 text-xs text-slate-400 leading-relaxed">
+          <div class="flex gap-2 items-start">
+            <i data-lucide="info" class="w-4 h-4 text-indigo-400 shrink-0 mt-0.5"></i>
+            <div>
+              <p class="font-bold text-indigo-300">ポイントは自動的に配布されます</p>
+              <p class="text-[11px] text-slate-500">ユーザー自身による購入や手動チャージはありません。期間限定ポイントは毎日のキャンペーンなどで入手可能です。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- デバッグ・管理者権限トグル (プロトタイプ体験用) -->
+      <section class="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-5 backdrop-blur-md">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-sm font-bold text-slate-300">デモ用: 管理者権限の切り替え</h3>
+            <p class="text-xs text-slate-500">ONにすると、管理画面の遷移メニューが有効化されます</p>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="admin-toggle" class="sr-only peer" onchange="toggleAdminMode(this.checked)">
+            <div class="w-11 h-6 bg-slate-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-slate-300 after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+          </label>
+        </div>
+      </section>
+
+      <!-- 自分の過去の寝言一覧 -->
+      <section class="space-y-3">
+        <h3 class="text-sm font-bold text-indigo-300 flex items-center gap-1.5 px-1">
+          <i data-lucide="history" class="w-4 h-4"></i>
+          あなたがこれまでに放った寝言
+        </h3>
+        <div id="my-posts-list" class="space-y-3">
+          <!-- JSで動的に描画 -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ==============================================
+         C. 管理画面 (デフォルト非表示、管理者トグルONで開放)
+         ============================================== -->
+    <div id="view-admin" class="hidden space-y-6">
+
+      <section class="bg-slate-900/60 border border-red-950/40 rounded-2xl p-6 backdrop-blur-md shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/40 to-transparent"></div>
+
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-full bg-red-950/60 border border-red-500/30 flex items-center justify-center text-red-400 shadow-md">
+            <i data-lucide="shield-alert" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-red-200">negotole 管理システム</h2>
+            <p class="text-xs text-slate-400">全ユーザーが放った寝言の監視・モデレーションを行えます</p>
+          </div>
+        </div>
+
+        <!-- 統計パネル -->
+        <div class="grid grid-cols-3 gap-2.5 mb-6">
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-center">
+            <span class="text-[10px] text-slate-500 block">アクティブ寝言</span>
+            <span id="admin-stat-active" class="text-lg font-bold text-indigo-300">3</span>
+          </div>
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-center">
+            <span class="text-[10px] text-slate-500 block">システム総寝言</span>
+            <span id="admin-stat-total" class="text-lg font-bold text-slate-300">3</span>
+          </div>
+          <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-center">
+            <span class="text-[10px] text-slate-500 block">総消費ポイント</span>
+            <span id="admin-stat-points" class="text-lg font-bold text-amber-400">3 pt</span>
+          </div>
+        </div>
+
+        <div class="p-3 bg-red-950/20 rounded-xl border border-red-900/20 text-xs text-red-200/80 mb-6 flex gap-2">
+          <i data-lucide="shield-check" class="w-4 h-4 text-red-400 shrink-0 mt-0.5"></i>
+          <span>管理者は違反、あるいは不適切な「寝言」を強制的に夜空から消滅（即座にタイムラインから削除）させることができます。</span>
+        </div>
+
+        <!-- モデレーション対象リスト -->
+        <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">漂う寝言の管理リスト</h3>
+        <div id="admin-moderation-list" class="space-y-3">
+          <!-- JSでモデレーションカードを動的描画 -->
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- ==============================================
+       フローティングアクションボタン (FAB)
+       ============================================== -->
+  <button
+    onclick="openPostModal()"
+    id="fab-post"
+    class="fixed bottom-20 right-6 z-40 w-14 h-14 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/40 hover:shadow-indigo-500/60 hover:scale-105 active:scale-95 transition-all duration-200"
+    title="寝言を放つ"
+  >
+    <i data-lucide="plus" class="w-6 h-6"></i>
+  </button>
+
+  <!-- ==============================================
+       投稿ダイアログ（モーダル）
+       ============================================== -->
+  <div
+    id="post-modal"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm hidden opacity-0 transition-all duration-300"
+    onclick="closePostModal()"
+  >
+    <!-- モーダル本体 -->
+    <div
+      class="bg-slate-900 border border-indigo-950/80 rounded-2xl p-5 w-full max-w-md relative shadow-2xl overflow-hidden transform scale-95 opacity-0 transition-all duration-300"
+      onclick="event.stopPropagation()"
+      id="modal-content-box"
+    >
+      <div class="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent"></div>
+
+      <!-- モーダルヘッダー -->
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-sm font-bold text-indigo-200 flex items-center gap-1.5">
+          <i data-lucide="sparkles" class="w-4 h-4 text-purple-400"></i>
+          寝言をタイムラインに放つ
+        </h2>
+        <button onclick="closePostModal()" class="text-slate-400 hover:text-slate-200 transition p-1">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 入力フォーム -->
+      <div class="mb-4">
+        <textarea
+          id="post-content"
+          rows="4"
+          maxlength="255"
+          placeholder="起きたら消えてしまう本音、深夜だけの独り言をささやこう..."
+          class="w-full bg-slate-950/80 border border-indigo-950/80 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none transition"
+          oninput="updateCharCount()"
+        ></textarea>
+        <div class="flex justify-end mt-1.5">
+          <span class="text-xs text-slate-500 font-semibold" id="char-count">0/255 文字</span>
+        </div>
+      </div>
+
+      <!-- 表示時間設定 ＆ 固定消費ポイント表示 -->
+      <div class="bg-slate-950/50 rounded-xl p-4 border border-indigo-950/60 mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-xs text-indigo-300 font-bold flex items-center gap-1">
+            <i data-lucide="clock" class="w-3.5 h-3.5"></i> 漂う時間を選択:
+          </span>
+          <div class="text-xs text-slate-400 font-semibold">
+            消費ポイント: <span class="text-amber-300 font-black text-sm">1</span> <span class="text-[10px]">pt</span>
+          </div>
+        </div>
+
+        <!-- 5パターンの時間選択チップボタン -->
+        <div class="grid grid-cols-5 gap-2" id="duration-selector-container">
+          <button type="button" onclick="selectDuration(1)" id="btn-duration-1" class="py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60">1h</button>
+          <button type="button" onclick="selectDuration(3)" id="btn-duration-3" class="py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60">3h</button>
+          <button type="button" onclick="selectDuration(6)" id="btn-duration-6" class="py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60">6h</button>
+          <button type="button" onclick="selectDuration(12)" id="btn-duration-12" class="py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-500/50 bg-indigo-950/40 text-indigo-200 shadow-md shadow-indigo-500/10">12h</button>
+          <button type="button" onclick="selectDuration(24)" id="btn-duration-24" class="py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60">24h</button>
+        </div>
+      </div>
+
+      <!-- モーダルアクション -->
+      <div class="flex items-center justify-end gap-3">
+        <button
+          onclick="closePostModal()"
+          class="bg-slate-800/80 hover:bg-slate-800 text-slate-300 font-bold text-xs py-2.5 px-5 rounded-full transition-all active:scale-95"
+        >
+          やめる
+        </button>
+        <button
+          onclick="submitPost()"
+          class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-xs py-2.5 px-6 rounded-full shadow-lg shadow-indigo-500/20 hover:shadow-indigo-500/30 transition-all flex items-center gap-1.5 transform active:scale-95"
+        >
+          <i data-lucide="send" class="w-3.5 h-3.5"></i>
+          寝言を放つ (1pt)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ボトムナビゲーションバー -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md bg-slate-950/80 border-t border-indigo-950/60 py-2">
+    <div class="max-w-xl mx-auto flex items-center justify-around px-4">
+
+      <!-- タイムライン -->
+      <button onclick="switchView('timeline')" id="nav-timeline" class="flex flex-col items-center gap-0.5 text-indigo-400 transition">
+        <i data-lucide="align-left" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold">タイムライン</span>
+      </button>
+
+      <!-- マイページ -->
+      <button onclick="switchView('mypage')" id="nav-mypage" class="flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-300 transition">
+        <i data-lucide="user" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold">マイページ</span>
+      </button>
+
+      <!-- 管理者ボタン (隠し・トグルで表示状態変化) -->
+      <button onclick="switchView('admin')" id="nav-admin" class="hidden flex-col items-center gap-0.5 text-slate-500 hover:text-red-400 transition">
+        <i data-lucide="shield" class="w-5 h-5"></i>
+        <span class="text-[10px] font-bold">管理画面</span>
+      </button>
+
+    </div>
+  </nav>
+
+  <!-- トースト通知用のコンテナ -->
+  <div id="toast-container" class="fixed bottom-20 right-6 z-50 space-y-2 pointer-events-none"></div>
+
+  <!-- JavaScript -->
+  <script {="true"}>
+    const now = Date.now();
+
+    // ポイント詳細 (期間限定 + 恒久 = 合計)
+    let points = {
+      temporary: 30, // 期間限定 (優先消費)
+      permanent: 20  // 恒久
+    };
+
+    let selectedDurationHours = 12; // デフォルト12時間
+    let isAdmin = false; // 管理者フラグ
+    let currentView = 'timeline';
+
+    // 投稿データ
+    let posts = [
+      {
+        id: 'post_1',
+        content: '明日のプレゼン、緊張しすぎて今から胃が痛い。眠れないから羊を数え始めたけど、12匹目で羊がオオカミに追われ始めて眠気が吹き飛んだ。誰か助けて。',
+        createdAt: now - (1000 * 60 * 30), // 30分前
+        durationHours: 3,
+        isOwn: false // 自分の投稿かどうか
+      },
+      {
+        id: 'post_2',
+        content: 'コンビニのレジで「お箸つけますか？」って聞かれて、なぜか「一生お願いします」って答えてしまった。店員さんのあの絶妙な苦笑い、今思い出しても枕に顔を埋めたくなる。今すぐ消え去りたい。',
+        createdAt: now - (1000 * 60 * 60 * 2), // 2時間前
+        durationHours: 6,
+        isOwn: false
+      },
+      {
+        id: 'post_3',
+        content: '子どもの頃、雲は綿菓子でできていると本気で信じていた。いつか飛行機に乗ったら窓を開けて食べるのが夢だった。大人になったら、飛行機の窓は開かないし、雲はただの水滴だと知って、ちょっと寂しかったな。おやすみなさい。',
+        createdAt: now - (1000 * 60 * 60 * 18), // 18時間前
+        durationHours: 24,
+        isOwn: false
+      }
+    ];
+
+    // 全体の総投稿履歴カウンター（管理画面の統計用）
+    let totalPostsCount = 3;
+    let totalSpentPoints = 3; // 1投稿=1ptのため
+
+    // 初期化
+    window.onload = function() {
+      lucide.createIcons();
+      updatePointsDisplay();
+      renderTimeline();
+      // タイマーを1秒ごとに更新
+      setInterval(updateTimers, 1000);
+    };
+
+    // ポイント表示の更新
+    function updatePointsDisplay() {
+      const total = points.temporary + points.permanent;
+
+      // ヘッダー表示
+      document.getElementById('header-total-points').innerText = total;
+
+      // マイページ表示
+      document.getElementById('p-temp-val').innerText = points.temporary;
+      document.getElementById('p-perm-val').innerText = points.permanent;
+    }
+
+    // 表示時間選択ボタンの切り替え処理
+    function selectDuration(hours) {
+      selectedDurationHours = hours;
+      const patterns = [1, 3, 6, 12, 24];
+
+      patterns.forEach(h => {
+        const btn = document.getElementById(`btn-duration-${h}`);
+        if (h === hours) {
+          btn.className = "py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-500 bg-indigo-950/40 text-indigo-200 shadow-md shadow-indigo-500/10";
+        } else {
+          btn.className = "py-2 rounded-lg border text-xs font-bold transition-all text-center duration-150 border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60";
+        }
+      });
+    }
+
+    // 文字数カウント更新
+    function updateCharCount() {
+      const content = document.getElementById('post-content').value;
+      const charCount = document.getElementById('char-count');
+      charCount.innerText = `${content.length}/255 文字`;
+    }
+
+    // モーダルを開く
+    function openPostModal() {
+      const modal = document.getElementById('post-modal');
+      const contentBox = document.getElementById('modal-content-box');
+
+      modal.classList.remove('hidden');
+
+      // アニメーション用のウェイト
+      setTimeout(() => {
+        modal.classList.remove('opacity-0');
+        contentBox.classList.remove('scale-95', 'opacity-0');
+        contentBox.classList.add('scale-100', 'opacity-100');
+      }, 10);
+    }
+
+    // モーダルを閉じる
+    function closePostModal() {
+      const modal = document.getElementById('post-modal');
+      const contentBox = document.getElementById('modal-content-box');
+
+      modal.classList.add('opacity-0');
+      contentBox.classList.remove('scale-100', 'opacity-100');
+      contentBox.classList.add('scale-95', 'opacity-0');
+
+      setTimeout(() => {
+        modal.classList.add('hidden');
+      }, 300); // トランジション時間と合わせる
+    }
+
+    // ポイントを自動追加（マイページ内でのシミュレーション用・「自分でチャージ」ではない配布としてのモック）
+    function addPoints() {
+      points.temporary += 10; // キャンペーンなどの期間限定が降ってきた設定
+      updatePointsDisplay();
+      showNotification('限定キャンペーンにより期間限定ポイントが 10 pt 付与されました！', 'success');
+    }
+
+    // 画面ビュー切り替え
+    function switchView(viewName) {
+      currentView = viewName;
+
+      // すべてのビューを隠す
+      document.getElementById('view-timeline').classList.add('hidden');
+      document.getElementById('view-mypage').classList.add('hidden');
+      document.getElementById('view-admin').classList.add('hidden');
+
+      // 指定されたビューを表示
+      if (viewName === 'timeline') {
+        document.getElementById('view-timeline').classList.remove('hidden');
+        document.getElementById('fab-post').classList.remove('hidden'); // タイムラインの時だけFABを表示
+        renderTimeline();
+      } else if (viewName === 'mypage') {
+        document.getElementById('view-mypage').classList.remove('hidden');
+        document.getElementById('fab-post').classList.add('hidden'); // FABを非表示
+        renderMyPosts();
+      } else if (viewName === 'admin') {
+        if (!isAdmin) {
+          switchView('timeline');
+          return;
+        }
+        document.getElementById('view-admin').classList.remove('hidden');
+        document.getElementById('fab-post').classList.add('hidden'); // FABを非表示
+        renderAdminPanel();
+      }
+
+      // ボトムナビのハイライト状態更新
+      updateNavigationHighlight(viewName);
+    }
+
+    // ナビのハイライト切り替え
+    function updateNavigationHighlight(activeView) {
+      const navs = {
+        timeline: document.getElementById('nav-timeline'),
+        mypage: document.getElementById('nav-mypage'),
+        admin: document.getElementById('nav-admin')
+      };
+
+      Object.keys(navs).forEach(key => {
+        const el = navs[key];
+        if (!el) return;
+
+        if (key === activeView) {
+          if (key === 'admin') {
+            el.className = "flex flex-col items-center gap-0.5 text-red-400 transition";
+          } else {
+            el.className = "flex flex-col items-center gap-0.5 text-indigo-400 transition";
+          }
+        } else {
+          el.className = "flex flex-col items-center gap-0.5 text-slate-500 hover:text-slate-300 transition";
+        }
+      });
+    }
+
+    // 管理者モードのトグル切り替え
+    function toggleAdminMode(checked) {
+      isAdmin = checked;
+      const navAdminBtn = document.getElementById('nav-admin');
+
+      if (isAdmin) {
+        navAdminBtn.classList.remove('hidden');
+        navAdminBtn.classList.add('flex');
+        showNotification('管理者権限を有効にしました。ボトムナビに管理画面が追加されました。', 'success');
+      } else {
+        navAdminBtn.classList.add('hidden');
+        navAdminBtn.classList.remove('flex');
+        showNotification('管理者権限を解除しました。', 'info');
+        if (currentView === 'admin') {
+          switchView('timeline');
+        }
+      }
+    }
+
+    // 寝言の投稿送信
+    function submitPost() {
+      const contentTextArea = document.getElementById('post-content');
+      const content = contentTextArea.value.trim();
+
+      if (!content) {
+        showNotification('寝言を入力してください', 'error');
+        return;
+      }
+
+      const totalPoints = points.temporary + points.permanent;
+      if (totalPoints < 1) {
+        showNotification('ポイントが足りません。配布されるまでもうしばらくお待ちください。', 'error');
+        return;
+      }
+
+      // 1pt消費 (期間限定ポイントから優先消費)
+      if (points.temporary > 0) {
+        points.temporary -= 1;
+      } else {
+        points.permanent -= 1;
+      }
+
+      updatePointsDisplay();
+
+      // 新規データ作成
+      const newPost = {
+        id: 'post_' + Date.now().toString(),
+        content: content,
+        createdAt: Date.now(),
+        durationHours: selectedDurationHours,
+        isOwn: true
+      };
+
+      // タイムラインの先頭に追加
+      posts.unshift(newPost);
+      totalPostsCount += 1;
+      totalSpentPoints += 1;
+
+      // フォームリセット & モーダルクローズ
+      contentTextArea.value = '';
+      updateCharCount();
+      closePostModal();
+
+      // 再描画
+      renderTimeline();
+      showNotification(`寝言を夜空に放ちました（1ptを消費 / ${selectedDurationHours}時間漂います）`, 'info');
+    }
+
+    // タイムラインのレンダリング
+    function renderTimeline() {
+      const timeline = document.getElementById('timeline');
+      const activeCount = document.getElementById('active-count');
+
+      const now = Date.now();
+      const activePosts = posts.filter(post => {
+        const expirationTime = post.createdAt + (post.durationHours * 60 * 60 * 1000);
+        return expirationTime > now;
+      });
+
+      activeCount.innerText = activePosts.length;
+
+      if (activePosts.length === 0) {
+        timeline.innerHTML = `
+          <div class="text-center py-12 bg-slate-900/30 rounded-2xl border border-indigo-950/40">
+            <i data-lucide="moon-star" class="w-12 h-12 text-slate-600 mx-auto mb-3"></i>
+            <p class="text-slate-400 text-sm">現在漂う寝言はありません。</p>
+            <p class="text-xs text-slate-500 mt-1">最初の寝言を放ってみましょう。</p>
+          </div>
+        `;
+        lucide.createIcons();
+        return;
+      }
+
+      timeline.innerHTML = activePosts.map(post => {
+        const expirationTime = post.createdAt + (post.durationHours * 60 * 60 * 1000);
+        const totalDurationMs = post.durationHours * 60 * 60 * 1000;
+        const remainingMs = expirationTime - now;
+
+        // 残り比率
+        const ratio = Math.max(0, Math.min(100, (remainingMs / totalDurationMs) * 100));
+
+        let opacityClass = "opacity-100";
+        if (ratio < 15) {
+          opacityClass = "opacity-75";
+        } else if (ratio < 5) {
+          opacityClass = "opacity-50";
+        }
+
+        const timeLeftStr = formatRemainingTime(remainingMs);
+
+        return `
+          <div id="post-${post.id}" class="bg-slate-900/40 border border-slate-800/60 rounded-2xl p-4 pb-3.5 backdrop-blur-sm shadow-md transition-all duration-500 hover:border-indigo-900/50 relative overflow-hidden ${opacityClass}">
+
+            <!-- 上部消滅ゲージ -->
+            <div class="absolute top-0 left-0 right-0 h-[3px] bg-slate-950/60">
+              <div class="h-full bg-gradient-to-r from-purple-500 to-indigo-500 rounded-full transition-all duration-1000" style="width: ${ratio}%"></div>
+            </div>
+
+            <!-- カードヘッダー -->
+            <div class="flex items-center justify-between mb-2.5 mt-1">
+              <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-indigo-400 animate-pulse"></i>
+                <span class="text-[10px] text-slate-400">${formatTimeAgo(post.createdAt)}に漂流開始</span>
+                ${post.isOwn ? '<span class="bg-indigo-500/20 text-indigo-300 text-[9px] px-1.5 py-0.2 rounded-full font-bold">あなた</span>' : ''}
+              </div>
+
+              <!-- カウントダウンバッジ -->
+              <div class="flex items-center gap-1 bg-slate-950/70 border border-indigo-950/80 px-2.5 py-0.5 rounded-full text-[11px] font-mono text-pink-400 font-semibold">
+                <i data-lucide="hourglass" class="w-3 h-3 text-pink-400/80 animate-spin" style="animation-duration: 8s;"></i>
+                <span id="timer-${post.id}">${timeLeftStr}</span>
+              </div>
+            </div>
+
+            <!-- 本文 -->
+            <div class="text-sm text-slate-100 leading-relaxed mb-2.5 whitespace-pre-wrap">${post.content}</div>
+
+            <!-- カードフッター -->
+            <div class="flex items-center justify-end text-[10px] text-slate-500 border-t border-slate-800/30 pt-2">
+              <span class="flex items-center gap-1">
+                <i data-lucide="clock" class="w-3 h-3"></i>
+                漂う設定: ${post.durationHours}時間
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // マイページ用の「自分が放った寝言」リスト
+    function renderMyPosts() {
+      const container = document.getElementById('my-posts-list');
+      const myPosts = posts.filter(post => post.isOwn);
+
+      if (myPosts.length === 0) {
+        container.innerHTML = `
+          <div class="text-center py-8 bg-slate-900/20 rounded-xl border border-slate-800/40 text-slate-500 text-xs">
+            まだ放った寝言はありません
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = myPosts.map(post => {
+        const expirationTime = post.createdAt + (post.durationHours * 60 * 60 * 1000);
+        const isExpired = Date.now() > expirationTime;
+        const statusText = isExpired ? '消滅しました' : '漂流中';
+        const statusClass = isExpired ? 'bg-slate-800 text-slate-500' : 'bg-indigo-950/80 text-indigo-300 border border-indigo-500/30';
+
+        return `
+          <div class="bg-slate-950/50 border border-slate-900 rounded-xl p-3.5 relative overflow-hidden">
+            <div class="flex justify-between items-center mb-2">
+              <span class="text-[10px] text-slate-500">${new Date(post.createdAt).toLocaleTimeString('ja-JP', {hour: '2-digit', minute:'2-digit'})} 投稿</span>
+              <span class="text-[9px] font-bold px-2 py-0.5 rounded-full ${statusClass}">${statusText}</span>
+            </div>
+            <p class="text-xs text-slate-300 leading-relaxed">${post.content}</p>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 管理画面のレンダリング
+    function renderAdminPanel() {
+      const activePosts = posts.filter(post => {
+        const expirationTime = post.createdAt + (post.durationHours * 60 * 60 * 1000);
+        return expirationTime > Date.now();
+      });
+
+      // 統計情報更新
+      document.getElementById('admin-stat-active').innerText = activePosts.length;
+      document.getElementById('admin-stat-total').innerText = totalPostsCount;
+      document.getElementById('admin-stat-points').innerText = `${totalSpentPoints} pt`;
+
+      // モデレーション用リスト
+      const modContainer = document.getElementById('admin-moderation-list');
+
+      if (activePosts.length === 0) {
+        modContainer.innerHTML = `
+          <div class="text-center py-6 bg-slate-950/30 rounded-xl text-slate-500 text-xs">
+            モデレーション対象のアクティブな寝言はありません。
+          </div>
+        `;
+        return;
+      }
+
+      modContainer.innerHTML = activePosts.map(post => {
+        return `
+          <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 flex flex-col justify-between gap-3">
+            <div>
+              <p class="text-xs text-slate-200 font-semibold mb-1 line-clamp-3">${post.content}</p>
+              <div class="flex gap-2 text-[10px] text-slate-500">
+                <span>設定: ${post.durationHours}時間</span>
+                <span>•</span>
+                <span>投稿: ${formatTimeAgo(post.createdAt)}</span>
+                ${post.isOwn ? '<span class="text-indigo-400 font-semibold">(あなた)</span>' : ''}
+              </div>
+            </div>
+            <div class="flex justify-end pt-1 border-t border-slate-900">
+              <button
+                onclick="adminDeletePost('${post.id}')"
+                class="bg-red-950/60 hover:bg-red-900 border border-red-800/40 hover:border-red-600/80 text-red-200 text-[10px] font-bold px-3 py-1.5 rounded-lg transition flex items-center gap-1"
+              >
+                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                即時強制消滅
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    // 管理者による強制削除
+    function adminDeletePost(postId) {
+      const index = posts.findIndex(p => p.id === postId);
+      if (index !== -1) {
+        posts.splice(index, 1); // 該当の投稿を配列から削除
+        showNotification('寝言をタイムラインから強制消滅させました。', 'error');
+
+        // 各種再レンダリング
+        if (currentView === 'admin') {
+          renderAdminPanel();
+        } else {
+          renderTimeline();
+        }
+      }
+    }
+
+    // 各投稿のタイマーのみをリアルタイム更新
+    function updateTimers() {
+      const now = Date.now();
+      let needsReRender = false;
+
+      posts.forEach(post => {
+        const expirationTime = post.createdAt + (post.durationHours * 60 * 60 * 1000);
+        const remainingMs = expirationTime - now;
+
+        const timerEl = document.getElementById(`timer-${post.id}`);
+        if (timerEl) {
+          if (remainingMs <= 0) {
+            needsReRender = true;
+          } else {
+            timerEl.innerText = formatRemainingTime(remainingMs);
+          }
+        }
+      });
+
+      if (needsReRender) {
+        if (currentView === 'timeline') {
+          renderTimeline();
+        } else if (currentView === 'admin') {
+          renderAdminPanel();
+        }
+      }
+    }
+
+    // 残りミリ秒を「HH:MM:SS」に整形
+    function formatRemainingTime(ms) {
+      if (ms <= 0) return "消滅しました";
+      const totalSecs = Math.floor(ms / 1000);
+      const hours = Math.floor(totalSecs / 3600);
+      const minutes = Math.floor((totalSecs % 3600) / 60);
+      const seconds = totalSecs % 60;
+
+      const pad = (num) => String(num).padStart(2, '0');
+      return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    }
+
+    // 投稿されてからの経過時間表記
+    function formatTimeAgo(timestamp) {
+      const diffMs = Date.now() - timestamp;
+      const diffMins = Math.floor(diffMs / (1000 * 60));
+
+      if (diffMins < 1) return 'たった今';
+      if (diffMins < 60) return `${diffMins}分前`;
+
+      const diffHours = Math.floor(diffMins / 60);
+      return `${diffHours}時間前`;
+    }
+
+    // トースト通知システム
+    function showNotification(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+
+      let bgColor = 'bg-slate-900/95 border-indigo-900';
+      let iconColor = 'text-indigo-400';
+      let iconName = 'bell';
+
+      if (type === 'success') {
+        bgColor = 'bg-slate-900/95 border-emerald-900/80';
+        iconColor = 'text-emerald-400';
+        iconName = 'check-circle';
+      } else if (type === 'error') {
+        bgColor = 'bg-slate-900/95 border-rose-950';
+        iconColor = 'text-rose-400';
+        iconName = 'alert-triangle';
+      }
+
+      toast.className = `flex items-center gap-2.5 px-4 py-3 rounded-xl border text-xs text-slate-100 shadow-xl backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 pointer-events-auto max-w-sm ${bgColor}`;
+
+      toast.innerHTML = `
+        <i data-lucide="${iconName}" class="w-4 h-4 ${iconColor} shrink-0"></i>
+        <span>${message}</span>
+      `;
+
+      container.appendChild(toast);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('translate-y-1', 'opacity-0');
+        setTimeout(() => {
+          toast.remove();
+        }, 300);
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

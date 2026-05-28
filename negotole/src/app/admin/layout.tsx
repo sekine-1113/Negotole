@@ -11,12 +11,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div>
-      <nav className="bg-gray-800 text-white px-6 py-3 flex gap-4 items-center">
-        <span className="font-bold">管理パネル</span>
-        <Link href="/admin/campaigns" className="hover:underline text-sm">
+      <nav className="bg-slate-900/80 backdrop-blur-md border-b border-indigo-950/50 px-6 py-3 flex gap-4 items-center">
+        <span className="font-bold text-indigo-200">管理パネル</span>
+        <Link href="/admin/campaigns" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
           キャンペーン管理
         </Link>
-        <Link href="/" className="ml-auto hover:underline text-sm">
+        <Link href="/" className="ml-auto text-indigo-300 hover:text-indigo-100 text-sm transition">
           サイトへ戻る
         </Link>
       </nav>

@@ -36,7 +36,7 @@ export function Timeline({ initialPosts, initialNextCursor }: Props) {
   return (
     <div className="flex flex-col gap-4">
       {posts.length === 0 && (
-        <p className="text-center text-gray-400 py-12">まだ投稿がありません</p>
+        <p className="text-center text-indigo-300/60 py-12">まだ投稿がありません</p>
       )}
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
@@ -45,7 +45,7 @@ export function Timeline({ initialPosts, initialNextCursor }: Props) {
         <button
           onClick={loadMore}
           disabled={loading}
-          className="w-full py-2 text-sm text-gray-500 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          className="w-full py-2.5 text-sm text-indigo-300/70 border border-indigo-950/50 rounded-2xl hover:bg-slate-900/40 backdrop-blur-sm disabled:opacity-50 transition"
         >
           {loading ? "読み込み中..." : "もっと見る"}
         </button>
