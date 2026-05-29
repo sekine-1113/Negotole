@@ -1,15 +1,28 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasDailyPointToday } from "./points";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [Google],
+  providers: [
+    Google,
+    Credentials({
+      credentials: {},
+      async authorize() {
+        const [guest] = await db
+          .insert(users)
+          .values({ name: "ゲスト" })
+          .returning({ id: users.id, role: users.role });
+        return { id: String(guest.id), name: "ゲスト", role: guest.role };
+      },
+    }),
+  ],
   session: { strategy: "jwt" },
   callbacks: {
-    async jwt({ token, profile }) {
+    async jwt({ token, user, profile }) {
       if (profile?.email) {
         const email = profile.email;
         const name = (profile.name as string | undefined) ?? email;
@@ -36,6 +49,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         token.userId = userId;
+      } else if (user?.id) {
+        token.userId = Number(user.id);
+        token.role = (user as { role?: string }).role ?? "user";
+        token.isNewUser = true;
       }
 
       if (token.userId) {

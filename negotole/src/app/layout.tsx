@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { FabButton } from "@/components/FabButton";
+import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import "./globals.css";
 
 const mPlusRounded = M_PLUS_Rounded_1c({
@@ -42,6 +43,7 @@ export default async function RootLayout({
         {children}
         <FabButton isLoggedIn={isLoggedIn} />
         <BottomNav isAdmin={isAdmin} />
+        <ServiceWorkerRegistrar />
       </body>
     </html>
   );
