@@ -1,4 +1,4 @@
-import { bigint, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { bigint, index, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
 
 const commonColumns = {
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -17,19 +17,24 @@ export const users = pgTable("app_user", {
 
 export const userPoints = pgTable("user_point", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  userId: bigint("user_id", { mode: "number" }).notNull(),
+  userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }),
   getPoint: integer("get_point").notNull(),
   expiresAt: timestamp("expires_at"),
   ...commonColumns,
-});
+}, (t) => [
+  index("user_point_user_id_idx").on(t.userId),
+  index("user_point_expires_at_idx").on(t.expiresAt),
+]);
 
 export const posts = pgTable("post", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
-  userId: bigint("user_id", { mode: "number" }).notNull(),
+  userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }),
   content: varchar("content", { length: 255 }).notNull(),
   hiddenAt: timestamp("hidden_at").notNull(),
   ...commonColumns,
-});
+}, (t) => [
+  index("post_hidden_at_idx").on(t.hiddenAt),
+]);
 
 export const campaigns = pgTable("campaign", {
   id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
@@ -39,7 +44,9 @@ export const campaigns = pgTable("campaign", {
   endsAt: timestamp("ends_at").notNull(),
   bonusPoints: integer("bonus_points").notNull().default(100),
   ...commonColumns,
-});
+}, (t) => [
+  index("campaign_starts_ends_idx").on(t.startsAt, t.endsAt),
+]);
 
 export type User = typeof users.$inferSelect;
 export type UserPoint = typeof userPoints.$inferSelect;
