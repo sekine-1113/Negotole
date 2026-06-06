@@ -1,4 +1,4 @@
-import { bigint, index, integer, pgTable, text, timestamp, varchar } from "drizzle-orm/pg-core";
+import { bigint, index, integer, pgTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/pg-core";
 
 const commonColumns = {
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -43,12 +43,23 @@ export const campaigns = pgTable("campaign", {
   startsAt: timestamp("starts_at").notNull(),
   endsAt: timestamp("ends_at").notNull(),
   bonusPoints: integer("bonus_points").notNull().default(100),
+  pointsType: varchar("points_type", { length: 20 }).notNull().default("permanent"),
   ...commonColumns,
 }, (t) => [
   index("campaign_starts_ends_idx").on(t.startsAt, t.endsAt),
+]);
+
+export const campaignApplications = pgTable("campaign_application", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  campaignId: bigint("campaign_id", { mode: "number" }).notNull().references(() => campaigns.id, { onDelete: "cascade" }),
+  userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [
+  uniqueIndex("campaign_application_campaign_user_idx").on(t.campaignId, t.userId),
 ]);
 
 export type User = typeof users.$inferSelect;
 export type UserPoint = typeof userPoints.$inferSelect;
 export type Post = typeof posts.$inferSelect;
 export type Campaign = typeof campaigns.$inferSelect;
+export type CampaignApplication = typeof campaignApplications.$inferSelect;

@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // vi.mock はホイストされるため、変数も vi.hoisted() で定義する
-const { mockSelect, mockInsert } = vi.hoisted(() => ({
+const { mockSelect, mockInsert, mockTransaction } = vi.hoisted(() => ({
   mockSelect: vi.fn(),
   mockInsert: vi.fn(),
+  mockTransaction: vi.fn(),
 }));
 
 vi.mock("@/lib/db", () => ({
   db: {
     select: mockSelect,
     insert: mockInsert,
+    transaction: mockTransaction,
   },
 }));
 
@@ -206,18 +208,26 @@ describe("grantCampaignPoints", () => {
     vi.clearAllMocks();
   });
 
-  it("userId=1 に +100pt、expiresAt=null で INSERT する", async () => {
-    const mockValues = vi.fn().mockResolvedValue(undefined);
-    mockInsert.mockReturnValueOnce({ values: mockValues });
+  it("pointsType='permanent' のとき expiresAt=null で user_point に INSERT する", async () => {
+    const insertedValues: Array<Record<string, unknown>> = [];
 
-    await grantCampaignPoints(1, 100);
+    mockTransaction.mockImplementation(async (callback: (tx: { insert: (table: unknown) => { values: (v: Record<string, unknown>) => Promise<void> } }) => Promise<void>) => {
+      const tx = {
+        insert: (_table: unknown) => ({
+          values: (v: Record<string, unknown>) => {
+            insertedValues.push(v);
+            return Promise.resolve(undefined);
+          },
+        }),
+      };
+      await callback(tx);
+    });
 
-    expect(mockInsert).toHaveBeenCalledOnce();
-    expect(mockValues).toHaveBeenCalledOnce();
+    await grantCampaignPoints(1, 10, 100, "permanent", new Date("2026-05-31"));
 
-    const [insertArg] = mockValues.mock.calls[0];
-    expect(insertArg.userId).toBe(1);
-    expect(insertArg.getPoint).toBe(100);
-    expect(insertArg.expiresAt).toBeNull();
+    const userPointInsert = insertedValues.find((v) => "getPoint" in v);
+    expect(userPointInsert?.userId).toBe(1);
+    expect(userPointInsert?.getPoint).toBe(100);
+    expect(userPointInsert?.expiresAt).toBeNull();
   });
 });

@@ -1,10 +1,11 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { revalidateTag } from "next/cache";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
-import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasDailyPointToday } from "./points";
+import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasCampaignApplied, hasDailyPointToday } from "./points";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -56,26 +57,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (token.userId) {
+        let pointsChanged = false;
         try {
           const alreadyGranted = await hasDailyPointToday(Number(token.userId));
           if (!alreadyGranted) {
             await grantDailyPoints(Number(token.userId));
+            pointsChanged = true;
           }
         } catch (e) {
           console.error("[auth] daily point grant failed:", e);
         }
-      }
 
-      if (token.isNewUser === true) {
         try {
           const campaign = await getActiveCampaign();
           if (campaign) {
-            await grantCampaignPoints(Number(token.userId), campaign.bonusPoints);
+            const alreadyApplied = await hasCampaignApplied(Number(token.userId), campaign.id);
+            if (!alreadyApplied) {
+              await grantCampaignPoints(
+                Number(token.userId),
+                campaign.id,
+                campaign.bonusPoints,
+                campaign.pointsType,
+                campaign.endsAt,
+              );
+              pointsChanged = true;
+            }
           }
         } catch (e) {
           console.error("[auth] campaign point grant failed:", e);
         }
-        token.isNewUser = false;
+
+        if (pointsChanged) {
+          revalidateTag(`user-points-${token.userId}`, "max");
+        }
       }
 
       return token;
