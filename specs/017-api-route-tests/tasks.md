@@ -19,7 +19,7 @@
 
 **Purpose**: テスト実行ベースラインを確認する
 
-- [ ] T001 `negotole/` で `pnpm test` を実行し既存テストがすべてパスすることを確認する
+- [x] T001  `negotole/` で `pnpm test` を実行し既存テストがすべてパスすることを確認する
 
 **Checkpoint**: ベースライン確認完了 — テスト追加を開始できる
 
@@ -39,11 +39,11 @@ US1・US2 は完全に独立したファイルを扱うため、共通前提処�
 
 ### Implementation for User Story 1
 
-- [ ] T002 [P] [US1] `negotole/src/app/api/health/__tests__/route.test.ts` を新規作成する。`vi.mock("@/lib/db", () => ({ db: { execute: mockExecute } }))` でDBをモックし、`GET /api/health` が正常時に 200 と `{ status: "ok", db: "ok" }` を返すこと、DB 例外時に 503 と `{ status: "error", db: "error" }` を返すことをテストする
-- [ ] T003 [P] [US1] `negotole/src/app/api/users/me/__tests__/route.test.ts` を新規作成する。`vi.mock("@/lib/auth")` と `vi.mock("@/lib/db")`・`vi.mock("@/lib/points")` でモックし、未認証（`auth` が null）→ 401、認証済みでユーザーが存在する → 200 + `{ user, points }` を返すことをテストする
-- [ ] T004 [P] [US1] `negotole/src/app/api/posts/__tests__/route.test.ts` に `POST /api/posts` の認証テストを追記する。`vi.mock("@/lib/auth")` を追加し、未認証 → 401 となることをテストする。既存の GET テストには手を加えない
-- [ ] T005 [P] [US1] `negotole/src/app/api/admin/campaigns/__tests__/route.test.ts` を新規作成する（認証・認可部分のみ）。`GET`: 未認証 → 401、一般ユーザー → 403。`POST`: 未認証 → 401、一般ユーザー → 403 をテストする
-- [ ] T006 [P] [US1] `negotole/src/app/api/admin/campaigns/[id]/__tests__/route.test.ts` を新規作成する（認証部分のみ）。`PATCH`: 未認証 → 401。`DELETE`: 未認証 → 401 をテストする
+- [x] T002  [P] [US1] `negotole/src/app/api/health/__tests__/route.test.ts` を新規作成する。`vi.mock("@/lib/db", () => ({ db: { execute: mockExecute } }))` でDBをモックし、`GET /api/health` が正常時に 200 と `{ status: "ok", db: "ok" }` を返すこと、DB 例外時に 503 と `{ status: "error", db: "error" }` を返すことをテストする
+- [x] T003  [P] [US1] `negotole/src/app/api/users/me/__tests__/route.test.ts` を新規作成する。`vi.mock("@/lib/auth")` と `vi.mock("@/lib/db")`・`vi.mock("@/lib/points")` でモックし、未認証（`auth` が null）→ 401、認証済みでユーザーが存在する → 200 + `{ user, points }` を返すことをテストする
+- [x] T004  [P] [US1] `negotole/src/app/api/posts/__tests__/route.test.ts` に `POST /api/posts` の認証テストを追記する。`vi.mock("@/lib/auth")` を追加し、未認証 → 401 となることをテストする。既存の GET テストには手を加えない
+- [x] T005  [P] [US1] `negotole/src/app/api/admin/campaigns/__tests__/route.test.ts` を新規作成する（認証・認可部分のみ）。`GET`: 未認証 → 401、一般ユーザー → 403。`POST`: 未認証 → 401、一般ユーザー → 403 をテストする
+- [x] T006  [P] [US1] `negotole/src/app/api/admin/campaigns/[id]/__tests__/route.test.ts` を新規作成する（認証部分のみ）。`PATCH`: 未認証 → 401。`DELETE`: 未認証 → 401 をテストする
 
 **Checkpoint**: US1 完了 — 認証・認可テストがすべてパスする
 
@@ -57,8 +57,8 @@ US1・US2 は完全に独立したファイルを扱うため、共通前提処�
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] `negotole/src/app/api/admin/campaigns/__tests__/route.test.ts` に US2 のテストケースを追記する（T005 と同じファイル）。`GET`: 管理者 + 不正な cursor → 400。`POST`: 管理者 + name 空 → 400、管理者 + endsAt <= startsAt → 400、管理者 + bonusPoints が 0 → 400、管理者 + 既存アクティブキャンペーン → 409、管理者 + 正常入力（既存なし）→ 201 をテストする。DB モックは `mockSelect`（既存確認用）と `mockInsert`（INSERT 用）を使う
-- [ ] T008 [US2] `negotole/src/app/api/admin/campaigns/[id]/__tests__/route.test.ts` に US2 のテストケースを追記する（T006 と同じファイル）。`PATCH`: 管理者 + 存在しない ID → 404 をテストする。DB モックで存在確認クエリが空配列を返すよう設定する
+- [x] T007  [US2] `negotole/src/app/api/admin/campaigns/__tests__/route.test.ts` に US2 のテストケースを追記する（T005 と同じファイル）。`GET`: 管理者 + 不正な cursor → 400。`POST`: 管理者 + name 空 → 400、管理者 + endsAt <= startsAt → 400、管理者 + bonusPoints が 0 → 400、管理者 + 既存アクティブキャンペーン → 409、管理者 + 正常入力（既存なし）→ 201 をテストする。DB モックは `mockSelect`（既存確認用）と `mockInsert`（INSERT 用）を使う
+- [x] T008  [US2] `negotole/src/app/api/admin/campaigns/[id]/__tests__/route.test.ts` に US2 のテストケースを追記する（T006 と同じファイル）。`PATCH`: 管理者 + 存在しない ID → 404 をテストする。DB モックで存在確認クエリが空配列を返すよう設定する
 
 **Checkpoint**: US2 完了 — バリデーション・正常系テストがすべてパスする
 
@@ -68,8 +68,8 @@ US1・US2 は完全に独立したファイルを扱うため、共通前提処�
 
 **Purpose**: 全テスト実行確認と TypeScript 型チェック
 
-- [ ] T009 `negotole/` で `pnpm test` を実行し全テスト（既存 + 新規）がパスすることを確認する
-- [ ] T010 `negotole/` で `pnpm tsc --noEmit` を実行し型エラーがないことを確認する
+- [x] T009  `negotole/` で `pnpm test` を実行し全テスト（既存 + 新規）がパスすることを確認する
+- [x] T010 `negotole/` で `pnpm tsc --noEmit` を実行し型エラーがないことを確認する
 
 ---
 

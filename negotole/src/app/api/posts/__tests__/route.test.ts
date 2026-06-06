@@ -11,15 +11,20 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
+const { mockAuth } = vi.hoisted(() => ({
+  mockAuth: vi.fn().mockResolvedValue(null),
+}));
+
 vi.mock("@/lib/auth", () => ({
-  auth: vi.fn().mockResolvedValue(null),
+  auth: mockAuth,
 }));
 
 vi.mock("next/cache", () => ({
   revalidatePath: vi.fn(),
+  revalidateTag: vi.fn(),
 }));
 
-import { GET } from "@/app/api/posts/route";
+import { GET, POST } from "@/app/api/posts/route";
 
 function makeRequest(cursor?: string): NextRequest {
   const url = new URL("http://localhost:3000/api/posts");
@@ -90,5 +95,25 @@ describe("GET /api/posts - cursor バリデーション", () => {
     const res = await GET(makeRequest(Buffer.from("9999999999999999999").toString("base64")));
     expect(res.status).toBe(400);
     expect((await res.json()).error).toBe("Invalid cursor");
+  });
+});
+
+describe("POST /api/posts - 認証チェック", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("未認証 → 401", async () => {
+    mockAuth.mockResolvedValueOnce(null);
+    const req = new NextRequest("http://localhost:3000/api/posts", {
+      method: "POST",
+      body: JSON.stringify({ content: "test", duration: 60 }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    const res = await POST(req);
+
+    expect(res.status).toBe(401);
+    expect((await res.json()).error).toBe("Unauthorized");
   });
 });
