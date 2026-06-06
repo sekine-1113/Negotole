@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
+import { revalidateTag } from "next/cache";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
@@ -56,17 +57,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (token.userId) {
+        let pointsChanged = false;
         try {
           const alreadyGranted = await hasDailyPointToday(Number(token.userId));
           if (!alreadyGranted) {
             await grantDailyPoints(Number(token.userId));
+            pointsChanged = true;
           }
         } catch (e) {
           console.error("[auth] daily point grant failed:", e);
         }
-      }
 
-      if (token.userId) {
         try {
           const campaign = await getActiveCampaign();
           if (campaign) {
@@ -79,10 +80,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 campaign.pointsType,
                 campaign.endsAt,
               );
+              pointsChanged = true;
             }
           }
         } catch (e) {
           console.error("[auth] campaign point grant failed:", e);
+        }
+
+        if (pointsChanged) {
+          revalidateTag(`user-points-${token.userId}`, "max");
         }
       }
 
