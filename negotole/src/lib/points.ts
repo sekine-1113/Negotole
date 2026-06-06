@@ -1,7 +1,7 @@
-import { and, gt, isNull, sql, sum } from "drizzle-orm";
+import { and, eq, gt, isNull, sql, sum } from "drizzle-orm";
 import { unstable_cache } from "next/cache";
 import { db } from "./db";
-import { campaigns, userPoints } from "./db/schema";
+import { campaignApplications, campaigns, userPoints } from "./db/schema";
 import type { Campaign } from "./db/schema";
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
@@ -119,10 +119,25 @@ export async function getActiveCampaign(): Promise<Campaign | null> {
   return rows[0] ?? null;
 }
 
-export async function grantCampaignPoints(userId: number, bonusPoints: number): Promise<void> {
-  await db.insert(userPoints).values({
-    userId,
-    getPoint: bonusPoints,
-    expiresAt: null,
+export async function hasCampaignApplied(userId: number, campaignId: number): Promise<boolean> {
+  const rows = await db
+    .select({ id: campaignApplications.id })
+    .from(campaignApplications)
+    .where(and(eq(campaignApplications.userId, userId), eq(campaignApplications.campaignId, campaignId)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function grantCampaignPoints(
+  userId: number,
+  campaignId: number,
+  bonusPoints: number,
+  pointsType: string,
+  endsAt: Date,
+): Promise<void> {
+  const expiresAt = pointsType === "limited" ? endsAt : null;
+  await db.transaction(async (tx) => {
+    await tx.insert(campaignApplications).values({ campaignId, userId });
+    await tx.insert(userPoints).values({ userId, getPoint: bonusPoints, expiresAt });
   });
 }

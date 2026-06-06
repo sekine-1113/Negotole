@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json();
-  const { name, description, startsAt, endsAt, bonusPoints } = body;
+  const { name, description, startsAt, endsAt, bonusPoints, pointsType } = body;
 
   if (!name || typeof name !== "string" || name.length === 0 || name.length > 255) {
     return NextResponse.json({ error: "name は 1〜255 文字で入力してください。" }, { status: 400 });
@@ -77,6 +77,9 @@ export async function POST(req: NextRequest) {
   }
   if (!bonusPoints || typeof bonusPoints !== "number" || bonusPoints < 1 || !Number.isInteger(bonusPoints)) {
     return NextResponse.json({ error: "bonusPoints は 1 以上の整数で入力してください。" }, { status: 400 });
+  }
+  if (pointsType !== undefined && !["permanent", "limited"].includes(pointsType)) {
+    return NextResponse.json({ error: "pointsType は permanent または limited を指定してください。" }, { status: 400 });
   }
 
   const now = new Date();
@@ -101,7 +104,7 @@ export async function POST(req: NextRequest) {
 
   const [created] = await db
     .insert(campaigns)
-    .values({ name, description: description ?? null, startsAt: startsAtDate, endsAt: endsAtDate, bonusPoints })
+    .values({ name, description: description ?? null, startsAt: startsAtDate, endsAt: endsAtDate, bonusPoints, pointsType: pointsType ?? "permanent" })
     .returning();
 
   return NextResponse.json(

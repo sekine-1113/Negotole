@@ -4,7 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import { db } from "./db";
 import { users } from "./db/schema";
 import { eq } from "drizzle-orm";
-import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasDailyPointToday } from "./points";
+import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasCampaignApplied, hasDailyPointToday } from "./points";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -66,16 +66,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
       }
 
-      if (token.isNewUser === true) {
+      if (token.userId) {
         try {
           const campaign = await getActiveCampaign();
           if (campaign) {
-            await grantCampaignPoints(Number(token.userId), campaign.bonusPoints);
+            const alreadyApplied = await hasCampaignApplied(Number(token.userId), campaign.id);
+            if (!alreadyApplied) {
+              await grantCampaignPoints(
+                Number(token.userId),
+                campaign.id,
+                campaign.bonusPoints,
+                campaign.pointsType,
+                campaign.endsAt,
+              );
+            }
           }
         } catch (e) {
           console.error("[auth] campaign point grant failed:", e);
         }
-        token.isNewUser = false;
       }
 
       return token;

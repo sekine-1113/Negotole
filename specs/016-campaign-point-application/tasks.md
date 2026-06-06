@@ -19,7 +19,7 @@
 
 **Purpose**: ビルドベースラインを確認する
 
-- [ ] T001 `negotole/` で `pnpm build` を実行し現在のビルドがエラーなく通ることを確認する
+- [x] T001 `negotole/` で `pnpm build` を実行し現在のビルドがエラーなく通ることを確認する
 
 **Checkpoint**: ベースライン確認完了
 
@@ -31,9 +31,9 @@
 
 **⚠️ CRITICAL**: このフェーズが完了するまで US1・US2 の実装を開始しない
 
-- [ ] T002 `negotole/src/lib/db/schema.ts` を更新する。`uniqueIndex` を `drizzle-orm/pg-core` のインポートに追加する。`campaigns` テーブルの `bonusPoints` の後に `pointsType: varchar("points_type", { length: 20 }).notNull().default("permanent")` を追加する。`campaigns` テーブル定義の後（ファイル末尾の type export の前）に `campaignApplications` テーブルを追加する: `export const campaignApplications = pgTable("campaign_application", { id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(), campaignId: bigint("campaign_id", { mode: "number" }).notNull().references(() => campaigns.id, { onDelete: "cascade" }), userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }), createdAt: timestamp("created_at").notNull().defaultNow() }, (t) => [uniqueIndex("campaign_application_campaign_user_idx").on(t.campaignId, t.userId)]); export type CampaignApplication = typeof campaignApplications.$inferSelect;`
-- [ ] T003 `negotole/` で `pnpm drizzle-kit generate` を実行し、`campaign.points_type` カラム追加と `campaign_application` テーブル作成の SQL マイグレーションファイルを `negotole/drizzle/` に生成する（T002 完了後）
-- [ ] T004 `negotole/` で `pnpm drizzle-kit migrate` を実行し、生成されたマイグレーションを Neon DB に適用する（T003 完了後、`DATABASE_URL_UNPOOLED` 環境変数が必要）
+- [x] T002 `negotole/src/lib/db/schema.ts` を更新する。`uniqueIndex` を `drizzle-orm/pg-core` のインポートに追加する。`campaigns` テーブルの `bonusPoints` の後に `pointsType: varchar("points_type", { length: 20 }).notNull().default("permanent")` を追加する。`campaigns` テーブル定義の後（ファイル末尾の type export の前）に `campaignApplications` テーブルを追加する: `export const campaignApplications = pgTable("campaign_application", { id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(), campaignId: bigint("campaign_id", { mode: "number" }).notNull().references(() => campaigns.id, { onDelete: "cascade" }), userId: bigint("user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }), createdAt: timestamp("created_at").notNull().defaultNow() }, (t) => [uniqueIndex("campaign_application_campaign_user_idx").on(t.campaignId, t.userId)]); export type CampaignApplication = typeof campaignApplications.$inferSelect;`
+- [x] T003 `negotole/` で `pnpm drizzle-kit generate` を実行し、`campaign.points_type` カラム追加と `campaign_application` テーブル作成の SQL マイグレーションファイルを `negotole/drizzle/` に生成する（T002 完了後）
+- [x] T004 `negotole/` で `pnpm drizzle-kit migrate` を実行し、生成されたマイグレーションを Neon DB に適用する（T003 完了後、`DATABASE_URL_UNPOOLED` 環境変数が必要）
 
 **Checkpoint**: Foundational 完了 — US1・US2 の実装を開始できる
 
@@ -47,9 +47,9 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] `negotole/src/lib/points.ts` を更新する。インポートに `campaignApplications` を `@/lib/db/schema` から追加し、`eq` を `drizzle-orm` のインポートに追加する。`hasCampaignApplied(userId: number, campaignId: number): Promise<boolean>` 関数を追加する: `return (await db.select({ id: campaignApplications.id }).from(campaignApplications).where(and(eq(campaignApplications.userId, userId), eq(campaignApplications.campaignId, campaignId))).limit(1)).length > 0`。既存の `grantCampaignPoints(userId, bonusPoints)` のシグネチャを `grantCampaignPoints(userId: number, campaignId: number, bonusPoints: number, pointsType: string, endsAt: Date): Promise<void>` に変更し、関数本体を `const expiresAt = pointsType === "limited" ? endsAt : null; await db.transaction(async (tx) => { await tx.insert(campaignApplications).values({ campaignId, userId }); await tx.insert(userPoints).values({ userId, getPoint: bonusPoints, expiresAt }); });` に置き換える
-- [ ] T006 [US1] `negotole/src/lib/auth.ts` を更新する。`hasCampaignApplied` を `@/lib/points` のインポートに追加する。JWT コールバック内の `if (token.isNewUser === true) { ... }` ブロックを完全に削除する。`token.userId` が確定した後（デイリーポイント付与ブロックの後）に、全ユーザー向けのキャンペーン付与ブロックを追加する: `if (token.userId) { try { const campaign = await getActiveCampaign(); if (campaign) { const alreadyApplied = await hasCampaignApplied(Number(token.userId), campaign.id); if (!alreadyApplied) { await grantCampaignPoints(Number(token.userId), campaign.id, campaign.bonusPoints, campaign.pointsType, campaign.endsAt); } } } catch (e) { console.error("[auth] campaign point grant failed:", e); } }`
-- [ ] T007 [US1] `negotole/` で `pnpm build` を実行し TypeScript の型エラーがないことを確認する（T005・T006 完了後）
+- [x] T005 [US1] `negotole/src/lib/points.ts` を更新する。インポートに `campaignApplications` を `@/lib/db/schema` から追加し、`eq` を `drizzle-orm` のインポートに追加する。`hasCampaignApplied(userId: number, campaignId: number): Promise<boolean>` 関数を追加する: `return (await db.select({ id: campaignApplications.id }).from(campaignApplications).where(and(eq(campaignApplications.userId, userId), eq(campaignApplications.campaignId, campaignId))).limit(1)).length > 0`。既存の `grantCampaignPoints(userId, bonusPoints)` のシグネチャを `grantCampaignPoints(userId: number, campaignId: number, bonusPoints: number, pointsType: string, endsAt: Date): Promise<void>` に変更し、関数本体を `const expiresAt = pointsType === "limited" ? endsAt : null; await db.transaction(async (tx) => { await tx.insert(campaignApplications).values({ campaignId, userId }); await tx.insert(userPoints).values({ userId, getPoint: bonusPoints, expiresAt }); });` に置き換える
+- [x] T006 [US1] `negotole/src/lib/auth.ts` を更新する。`hasCampaignApplied` を `@/lib/points` のインポートに追加する。JWT コールバック内の `if (token.isNewUser === true) { ... }` ブロックを完全に削除する。`token.userId` が確定した後（デイリーポイント付与ブロックの後）に、全ユーザー向けのキャンペーン付与ブロックを追加する: `if (token.userId) { try { const campaign = await getActiveCampaign(); if (campaign) { const alreadyApplied = await hasCampaignApplied(Number(token.userId), campaign.id); if (!alreadyApplied) { await grantCampaignPoints(Number(token.userId), campaign.id, campaign.bonusPoints, campaign.pointsType, campaign.endsAt); } } } catch (e) { console.error("[auth] campaign point grant failed:", e); } }`
+- [x] T007 [US1] `negotole/` で `pnpm build` を実行し TypeScript の型エラーがないことを確認する（T005・T006 完了後）
 
 **Checkpoint**: US1 完了 — 既存ユーザーもキャンペーンポイントを受け取れる
 
@@ -63,10 +63,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T008 [P] [US2] `negotole/src/app/api/admin/campaigns/route.ts` の `POST` ハンドラを更新する。`const { name, description, startsAt, endsAt, bonusPoints, pointsType } = body;` に `pointsType` を追加する。`pointsType` の値が `undefined` でない場合、`["permanent", "limited"].includes(pointsType)` でバリデーションし、失敗時は `NextResponse.json({ error: "pointsType は permanent または limited を指定してください。" }, { status: 400 })` を返す。`db.insert(campaigns).values(...)` に `pointsType: pointsType ?? "permanent"` を追加する
-- [ ] T009 [P] [US2] `negotole/src/app/api/admin/campaigns/[id]/route.ts` の `PATCH` ハンドラを更新する。`updates` オブジェクトの型定義 `Partial<{...}>` に `pointsType?: string` を追加する。`body.pointsType` が存在する場合、`["permanent", "limited"].includes(body.pointsType)` でバリデーションし、失敗時は 400 を返す。合格時は `updates.pointsType = body.pointsType` を設定する
-- [ ] T010 [P] [US2] `negotole/src/app/admin/campaigns/new/page.tsx` を更新する。`data` オブジェクトに `pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value` を追加する（`handleSubmit` 内）。フォームに `pointsType` ラジオボタンを追加する（`bonusPoints` フィールドの下）: `<div><label className="block text-sm font-medium mb-2">ポイント種別 <span className="text-red-500">*</span></label><div className="flex gap-6"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="pointsType" value="permanent" defaultChecked className="accent-indigo-500" /><span className="text-sm">恒久（無期限）</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="pointsType" value="limited" className="accent-indigo-500" /><span className="text-sm">期間限定（キャンペーン終了日まで）</span></label></div></div>`
-- [ ] T011 [US2] `negotole/src/app/admin/campaigns/[id]/edit/page.tsx` を更新する。`Campaign` 型に `pointsType: string` を追加する。`data` オブジェクトに `pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value` を追加する（`handleSubmit` 内）。フォームに `pointsType` ラジオボタンを追加する（`bonusPoints` フィールドの下）。各 `defaultChecked` を `campaign!.pointsType === "permanent"` と `campaign!.pointsType === "limited"` で設定する
+- [x] T008 [P] [US2] `negotole/src/app/api/admin/campaigns/route.ts` の `POST` ハンドラを更新する。`const { name, description, startsAt, endsAt, bonusPoints, pointsType } = body;` に `pointsType` を追加する。`pointsType` の値が `undefined` でない場合、`["permanent", "limited"].includes(pointsType)` でバリデーションし、失敗時は `NextResponse.json({ error: "pointsType は permanent または limited を指定してください。" }, { status: 400 })` を返す。`db.insert(campaigns).values(...)` に `pointsType: pointsType ?? "permanent"` を追加する
+- [x] T009 [P] [US2] `negotole/src/app/api/admin/campaigns/[id]/route.ts` の `PATCH` ハンドラを更新する。`updates` オブジェクトの型定義 `Partial<{...}>` に `pointsType?: string` を追加する。`body.pointsType` が存在する場合、`["permanent", "limited"].includes(body.pointsType)` でバリデーションし、失敗時は 400 を返す。合格時は `updates.pointsType = body.pointsType` を設定する
+- [x] T010 [P] [US2] `negotole/src/app/admin/campaigns/new/page.tsx` を更新する。`data` オブジェクトに `pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value` を追加する（`handleSubmit` 内）。フォームに `pointsType` ラジオボタンを追加する（`bonusPoints` フィールドの下）: `<div><label className="block text-sm font-medium mb-2">ポイント種別 <span className="text-red-500">*</span></label><div className="flex gap-6"><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="pointsType" value="permanent" defaultChecked className="accent-indigo-500" /><span className="text-sm">恒久（無期限）</span></label><label className="flex items-center gap-2 cursor-pointer"><input type="radio" name="pointsType" value="limited" className="accent-indigo-500" /><span className="text-sm">期間限定（キャンペーン終了日まで）</span></label></div></div>`
+- [x] T011 [US2] `negotole/src/app/admin/campaigns/[id]/edit/page.tsx` を更新する。`Campaign` 型に `pointsType: string` を追加する。`data` オブジェクトに `pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value` を追加する（`handleSubmit` 内）。フォームに `pointsType` ラジオボタンを追加する（`bonusPoints` フィールドの下）。各 `defaultChecked` を `campaign!.pointsType === "permanent"` と `campaign!.pointsType === "limited"` で設定する
 
 **Checkpoint**: US2 完了 — ポイント種別を選択してキャンペーンを作成・編集できる
 
@@ -76,7 +76,7 @@
 
 **Purpose**: 最終ビルド確認と手動動作検証
 
-- [ ] T012 `negotole/` で `pnpm build` を実行し TypeScript 型チェックとビルドが成功することを確認する
+- [x] T012 `negotole/` で `pnpm build` を実行し TypeScript 型チェックとビルドが成功することを確認する
 - [ ] T013 [P] 既存ユーザー（Google ログイン）でアクティブなキャンペーン期間中にログインし、ポイント残高にキャンペーンボーナスが加算されることをブラウザで確認する。再ログインでは加算されないことも確認する
 - [ ] T014 [P] 管理画面でキャンペーン新規作成フォームを開き、「ポイント種別」ラジオボタンが表示され、「期間限定」を選択して保存できることを確認する
 

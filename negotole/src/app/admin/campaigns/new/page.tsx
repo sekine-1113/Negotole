@@ -20,6 +20,7 @@ export default function NewCampaignPage() {
       startsAt: (form.elements.namedItem("startsAt") as HTMLInputElement).value,
       endsAt: (form.elements.namedItem("endsAt") as HTMLInputElement).value,
       bonusPoints: Number((form.elements.namedItem("bonusPoints") as HTMLInputElement).value),
+      pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value,
     };
 
     try {
@@ -119,6 +120,20 @@ export default function NewCampaignPage() {
             defaultValue={100}
             className="w-full border rounded px-3 py-2 text-sm"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">ポイント種別 <span className="text-red-500">*</span></label>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pointsType" value="permanent" defaultChecked className="accent-indigo-500" />
+              <span className="text-sm">恒久（無期限）</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pointsType" value="limited" className="accent-indigo-500" />
+              <span className="text-sm">期間限定（キャンペーン終了日まで）</span>
+            </label>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">

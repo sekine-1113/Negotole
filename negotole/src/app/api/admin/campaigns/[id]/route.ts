@@ -30,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const body = await req.json();
-  const updates: Partial<{ name: string; description: string | null; startsAt: Date; endsAt: Date; bonusPoints: number; updatedAt: Date }> = {};
+  const updates: Partial<{ name: string; description: string | null; startsAt: Date; endsAt: Date; bonusPoints: number; pointsType: string; updatedAt: Date }> = {};
 
   if (body.name !== undefined) {
     if (typeof body.name !== "string" || body.name.length === 0 || body.name.length > 255) {
@@ -57,6 +57,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "bonusPoints は 1 以上の整数で入力してください。" }, { status: 400 });
     }
     updates.bonusPoints = body.bonusPoints;
+  }
+  if (body.pointsType !== undefined) {
+    if (!["permanent", "limited"].includes(body.pointsType)) {
+      return NextResponse.json({ error: "pointsType は permanent または limited を指定してください。" }, { status: 400 });
+    }
+    updates.pointsType = body.pointsType;
   }
 
   const now = new Date();

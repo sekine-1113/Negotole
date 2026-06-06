@@ -10,6 +10,7 @@ type Campaign = {
   startsAt: string;
   endsAt: string;
   bonusPoints: number;
+  pointsType: string;
   isActive: boolean;
 };
 
@@ -53,6 +54,7 @@ export default function EditCampaignPage() {
       startsAt: new Date((form.elements.namedItem("startsAt") as HTMLInputElement).value).toISOString(),
       endsAt: new Date((form.elements.namedItem("endsAt") as HTMLInputElement).value).toISOString(),
       bonusPoints: Number((form.elements.namedItem("bonusPoints") as HTMLInputElement).value),
+      pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value,
     };
 
     try {
@@ -183,6 +185,20 @@ export default function EditCampaignPage() {
             defaultValue={campaign!.bonusPoints}
             className="w-full border rounded px-3 py-2 text-sm"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium mb-2">ポイント種別 <span className="text-red-500">*</span></label>
+          <div className="flex gap-6">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pointsType" value="permanent" defaultChecked={campaign!.pointsType === "permanent"} className="accent-indigo-500" />
+              <span className="text-sm">恒久（無期限）</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="pointsType" value="limited" defaultChecked={campaign!.pointsType === "limited"} className="accent-indigo-500" />
+              <span className="text-sm">期間限定（キャンペーン終了日まで）</span>
+            </label>
+          </div>
         </div>
 
         <div className="flex gap-3 pt-2">
