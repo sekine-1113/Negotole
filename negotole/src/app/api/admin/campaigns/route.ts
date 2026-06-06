@@ -1,10 +1,10 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { campaigns } from "@/lib/db/schema";
-import { and, desc, isNull, sql } from "drizzle-orm";
+import { and, desc, isNull, lt, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,19 +13,40 @@ export async function GET() {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
+  const { searchParams } = new URL(req.url);
+  const rawLimit = Number(searchParams.get("limit") ?? 20);
+  const limit = Number.isInteger(rawLimit) && rawLimit >= 1 ? Math.min(rawLimit, 100) : 20;
+  const cursor = searchParams.get("cursor");
+
+  let cursorId: number | null = null;
+  if (cursor) {
+    const decoded = Number(Buffer.from(cursor, "base64").toString());
+    if (!Number.isSafeInteger(decoded) || decoded <= 0) {
+      return NextResponse.json({ error: "Invalid cursor" }, { status: 400 });
+    }
+    cursorId = decoded;
+  }
+
   const now = new Date();
   const rows = await db
     .select()
     .from(campaigns)
-    .where(isNull(campaigns.deletedAt))
-    .orderBy(desc(campaigns.createdAt));
+    .where(and(isNull(campaigns.deletedAt), cursorId ? lt(campaigns.id, cursorId) : undefined))
+    .orderBy(desc(campaigns.id))
+    .limit(limit + 1);
 
-  const result = rows.map((c) => ({
+  const hasMore = rows.length > limit;
+  const items = hasMore ? rows.slice(0, limit) : rows;
+  const nextCursor = hasMore
+    ? Buffer.from(String(items[items.length - 1].id)).toString("base64")
+    : null;
+
+  const result = items.map((c) => ({
     ...c,
     isActive: c.startsAt <= now && c.endsAt >= now,
   }));
 
-  return NextResponse.json({ campaigns: result });
+  return NextResponse.json({ campaigns: result, nextCursor });
 }
 
 export async function POST(req: NextRequest) {

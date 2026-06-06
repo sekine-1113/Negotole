@@ -19,7 +19,7 @@
 
 **Purpose**: ビルドベースラインを確認し、実装前の状態を保証する
 
-- [ ] T001 `negotole/` で `pnpm build` を実行し現在のビルドがエラーなく通ることを確認する
+- [x] T001 `negotole/` で `pnpm build` を実行し現在のビルドがエラーなく通ることを確認する
 
 **Checkpoint**: ベースライン確認完了 — US1・US2 の実装を開始できる
 
@@ -39,8 +39,8 @@ US1 と US2 は完全に独立しており、共通の前提処理は不要。Ph
 
 ### Implementation for User Story 1
 
-- [ ] T002 [US1] `negotole/src/app/admin/campaigns/page.tsx` の関数シグネチャを `({ searchParams }: { searchParams: Promise<{ cursor?: string }> })` に変更し、`await searchParams` で cursor を取得する。`and`, `lt`, `desc` を `drizzle-orm` からインポートし、`isNull(campaigns.deletedAt)` に加えて `cursorId ? lt(campaigns.id, cursorId) : undefined` を where 条件に追加、`orderBy(desc(campaigns.id))`、`.limit(21)` でクエリを更新する。cursor のデコードは `Number(Buffer.from(cursor, "base64").toString())` を使用し、`Number.isSafeInteger(decoded) && decoded > 0` で検証する（無効な場合は cursorId を null として扱う）。`hasMore = rows.length > 20` で判定し `items = rows.slice(0, 20)` で切り出す。`nextCursor = hasMore ? Buffer.from(String(items[items.length - 1].id)).toString("base64") : null` で生成する
-- [ ] T003 [US1] `negotole/src/app/admin/campaigns/page.tsx` のテーブル下部（`</div>` の直前）に `nextCursor` が存在する場合のページナビゲーション UI を追加する。`<Link href={"/admin/campaigns?cursor=" + nextCursor} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded">次のページ →</Link>` を `mt-4 flex justify-end` の div でラップする。`Link` は `next/link` からインポートする
+- [x] T002 [US1] `negotole/src/app/admin/campaigns/page.tsx` の関数シグネチャを `({ searchParams }: { searchParams: Promise<{ cursor?: string }> })` に変更し、`await searchParams` で cursor を取得する。`and`, `lt`, `desc` を `drizzle-orm` からインポートし、`isNull(campaigns.deletedAt)` に加えて `cursorId ? lt(campaigns.id, cursorId) : undefined` を where 条件に追加、`orderBy(desc(campaigns.id))`、`.limit(21)` でクエリを更新する。cursor のデコードは `Number(Buffer.from(cursor, "base64").toString())` を使用し、`Number.isSafeInteger(decoded) && decoded > 0` で検証する（無効な場合は cursorId を null として扱う）。`hasMore = rows.length > 20` で判定し `items = rows.slice(0, 20)` で切り出す。`nextCursor = hasMore ? Buffer.from(String(items[items.length - 1].id)).toString("base64") : null` で生成する
+- [x] T003 [US1] `negotole/src/app/admin/campaigns/page.tsx` のテーブル下部（`</div>` の直前）に `nextCursor` が存在する場合のページナビゲーション UI を追加する。`<Link href={"/admin/campaigns?cursor=" + nextCursor} className="px-4 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded">次のページ →</Link>` を `mt-4 flex justify-end` の div でラップする。`Link` は `next/link` からインポートする
 
 **Checkpoint**: US1 完了 — 管理画面でページ送りが動作する
 
@@ -54,7 +54,7 @@ US1 と US2 は完全に独立しており、共通の前提処理は不要。Ph
 
 ### Implementation for User Story 2
 
-- [ ] T004 [P] [US2] `negotole/src/app/api/admin/campaigns/route.ts` の `GET` 関数を更新する。`and`, `lt`, `desc` を `drizzle-orm` のインポートに追加する。URL から `limit`（省略時20、上限100）と `cursor` を取得し、cursor が存在する場合は `Number(Buffer.from(cursor, "base64").toString())` でデコードして `Number.isSafeInteger(decoded) && decoded > 0` で検証（失敗時は 400 を返す）。where 条件を `and(isNull(campaigns.deletedAt), cursorId ? lt(campaigns.id, cursorId) : undefined)` に変更し、`orderBy(desc(campaigns.id))`、`.limit(limit + 1)` でクエリを実行する。`hasMore = rows.length > limit`、`items = hasMore ? rows.slice(0, limit) : rows`、`nextCursor = hasMore ? Buffer.from(String(items[items.length - 1].id)).toString("base64") : null` を計算してレスポンスを `NextResponse.json({ campaigns: result, nextCursor })` に変更する
+- [x] T004 [P] [US2] `negotole/src/app/api/admin/campaigns/route.ts` の `GET` 関数を更新する。`and`, `lt`, `desc` を `drizzle-orm` のインポートに追加する。URL から `limit`（省略時20、上限100）と `cursor` を取得し、cursor が存在する場合は `Number(Buffer.from(cursor, "base64").toString())` でデコードして `Number.isSafeInteger(decoded) && decoded > 0` で検証（失敗時は 400 を返す）。where 条件を `and(isNull(campaigns.deletedAt), cursorId ? lt(campaigns.id, cursorId) : undefined)` に変更し、`orderBy(desc(campaigns.id))`、`.limit(limit + 1)` でクエリを実行する。`hasMore = rows.length > limit`、`items = hasMore ? rows.slice(0, limit) : rows`、`nextCursor = hasMore ? Buffer.from(String(items[items.length - 1].id)).toString("base64") : null` を計算してレスポンスを `NextResponse.json({ campaigns: result, nextCursor })` に変更する
 
 **Checkpoint**: US2 完了 — API が `nextCursor` を含むページネーションレスポンスを返す
 
@@ -64,7 +64,7 @@ US1 と US2 は完全に独立しており、共通の前提処理は不要。Ph
 
 **Purpose**: ビルド確認と手動検証
 
-- [ ] T005 `negotole/` で `pnpm build` を実行し TypeScript 型チェックとビルドが成功することを確認する
+- [x] T005 `negotole/` で `pnpm build` を実行し TypeScript 型チェックとビルドが成功することを確認する
 - [ ] T006 [P] ブラウザで `/admin/campaigns` を開き、キャンペーンが 20 件超存在するとき「次のページ →」リンクが表示され、クリックすると次の件が表示されることを確認する
 - [ ] T007 [P] `curl -b "<admin-session-cookie>" http://localhost:3000/api/admin/campaigns?limit=5` を実行し HTTP 200・`campaigns`（5件）・`nextCursor` が返ることを確認する
 
