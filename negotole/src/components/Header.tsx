@@ -64,19 +64,36 @@ export async function Header() {
               </form>
             </>
           ) : (
-            <form
-              action={async () => {
-                "use server";
-                await signIn("credentials", { redirectTo: "/" });
-              }}
-            >
-              <button
-                type="submit"
-                className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-4 py-2 min-h-[44px] inline-flex items-center shadow-lg shadow-indigo-500/20 transition sm:text-sm"
+            <div className="flex items-center gap-2">
+              {process.env.NODE_ENV === "development" && (
+                <form
+                  action={async () => {
+                    "use server";
+                    await signIn("google", { redirectTo: "/" });
+                  }}
+                >
+                  <button
+                    type="submit"
+                    className="text-xs border border-indigo-400/50 text-indigo-300 hover:bg-indigo-900/40 rounded-full px-3 py-2 min-h-[44px] inline-flex items-center transition sm:text-sm"
+                  >
+                    [dev] Google
+                  </button>
+                </form>
+              )}
+              <form
+                action={async () => {
+                  "use server";
+                  await signIn("credentials", { redirectTo: "/" });
+                }}
               >
-                ゲストとしてログイン
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-4 py-2 min-h-[44px] inline-flex items-center shadow-lg shadow-indigo-500/20 transition sm:text-sm"
+                >
+                  ゲストとしてログイン
+                </button>
+              </form>
+            </div>
           )}
         </div>
       </div>
