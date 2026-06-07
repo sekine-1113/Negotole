@@ -19,6 +19,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin/posts" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
           投稿管理
         </Link>
+        <Link href="/admin/users" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
+          ユーザー管理
+        </Link>
         <Link href="/" className="ml-auto text-indigo-300 hover:text-indigo-100 text-sm transition">
           サイトへ戻る
         </Link>
