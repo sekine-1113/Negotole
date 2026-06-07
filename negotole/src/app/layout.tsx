@@ -5,6 +5,8 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { FabButton } from "@/components/FabButton";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const mPlusRounded = M_PLUS_Rounded_1c({
@@ -44,6 +46,8 @@ export default async function RootLayout({
         <FabButton isLoggedIn={isLoggedIn} />
         <BottomNav isAdmin={isAdmin} />
         <ServiceWorkerRegistrar />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
