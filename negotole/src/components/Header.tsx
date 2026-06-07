@@ -30,8 +30,8 @@ export async function Header() {
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-slate-950/60 border-b border-indigo-950/50 px-4 py-3">
-      <div className="max-w-xl mx-auto flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2">
+      <div className="max-w-xl md:max-w-4xl mx-auto flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20 animate-[float_4s_ease-in-out_infinite]">
             <Moon className="w-5 h-5 text-white" />
           </div>
@@ -39,13 +39,23 @@ export async function Header() {
             <h1 className="text-xl font-black tracking-wider bg-gradient-to-r from-indigo-300 via-purple-300 to-pink-300 bg-clip-text text-transparent">
               negotole
             </h1>
-            <p className="text-[10px] text-indigo-300/80 tracking-widest font-bold -mt-1">
+            <p className="text-[10px] text-indigo-300/80 tracking-widest font-bold -mt-1 hidden md:block">
               寝言る - 夢うつつのタイムライン
             </p>
           </div>
         </Link>
 
-        <div className="flex items-center gap-2 sm:gap-3">
+        <nav className="hidden md:flex items-center gap-5 text-sm text-slate-400 mx-auto">
+          <Link href="/" className="hover:text-slate-200 transition-colors whitespace-nowrap">タイムライン</Link>
+          {session?.user && (
+            <Link href="/mypage" className="hover:text-slate-200 transition-colors whitespace-nowrap">マイページ</Link>
+          )}
+          {session?.user?.role === "admin" && (
+            <Link href="/admin/campaigns" className="hover:text-slate-200 transition-colors whitespace-nowrap">管理</Link>
+          )}
+        </nav>
+
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto md:ml-0">
           {session?.user ? (
             <>
               <PointBadge total={totalPoints} />

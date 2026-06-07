@@ -1,4 +1,4 @@
-const CACHE_NAME = "negotole-static-v1";
+const CACHE_NAME = "negotole-static-v2";
 const STATIC_PREFIXES = ["/_next/static/", "/icons/"];
 
 self.addEventListener("install", () => {

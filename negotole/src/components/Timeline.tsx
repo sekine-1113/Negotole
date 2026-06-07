@@ -13,9 +13,10 @@ type Post = {
 type Props = {
   initialPosts: Post[];
   initialNextCursor: string | null;
+  isLoggedIn: boolean;
 };
 
-export function Timeline({ initialPosts, initialNextCursor }: Props) {
+export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
@@ -39,7 +40,7 @@ export function Timeline({ initialPosts, initialNextCursor }: Props) {
         <p className="text-center text-indigo-300/60 py-12">まだ投稿がありません</p>
       )}
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} />
+        <PostCard key={post.id} post={post} isLoggedIn={isLoggedIn} />
       ))}
       {nextCursor && (
         <button
