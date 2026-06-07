@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminAuditLogs, campaigns } from "@/lib/db/schema";
 import { log } from "@/lib/logger";
-import { headers } from "next/headers";
 import { and, desc, isNull, lt, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -110,10 +109,9 @@ export async function POST(req: NextRequest) {
     .returning();
 
   const adminId = Number(session.user.id);
-  const headersList = await headers();
   const ip =
-    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headersList.get("x-real-ip") ??
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
     null;
 
   try {

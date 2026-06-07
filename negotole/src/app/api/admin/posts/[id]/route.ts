@@ -3,7 +3,6 @@ import { db } from "@/lib/db";
 import { adminAuditLogs, posts } from "@/lib/db/schema";
 import { log } from "@/lib/logger";
 import { and, eq, isNull } from "drizzle-orm";
-import { headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -32,10 +31,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   const adminId = Number(session.user.id);
-  const headersList = await headers();
   const ip =
-    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    headersList.get("x-real-ip") ??
+    _req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    _req.headers.get("x-real-ip") ??
     null;
 
   await db
