@@ -19,16 +19,13 @@
 
 ## 🔴 P1 — デプロイ前に必須
 
-### 1. レートリミッターを API ルートに実際に適用する
+### ~~1. レートリミッターを API ルートに実際に適用する~~ ✅ 対応済み（021）
 
-**現状**: `src/lib/ratelimit.ts` に `postWriteLimiter` / `authLimiter` / `adminLimiter` が定義され、Upstash Redis との接続コードも完備している。`src/env.ts` でも `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` を必須として起動時検証している。  
-**問題**: 上記 3 つのリミッターを実際に呼び出している API ルートが **0 件**。定義だけで適用されていない。  
-**対応**:
-- `POST /api/posts` → `postWriteLimiter`（IP ベース or ユーザー ID ベース）
-- `POST /api/auth/*`（NextAuth エンドポイント） → `authLimiter`
-- `POST /api/admin/*` 系 → `adminLimiter`
-
-各ルート先頭で `await limiter.limit(identifier)` を呼び、`success === false` のとき `429 Too Many Requests` を返す。
+**対応内容**（021 でマージ済み）:
+- `POST /api/posts` → `postWriteLimiter`（ユーザー ID ベース、10回/60秒、fail-open）
+- `GET /api/admin/users`・`POST freeze/unfreeze`・`DELETE /api/admin/posts/[id]` → `adminLimiter`（ユーザー ID ベース、30回/60秒、fail-open）
+- Redis 障害時は fail-open（スキップして通す）
+- `authLimiter` は NextAuth 管理エンドポイントへの適用が困難なため未適用（NextAuth の route handler は直接編集不可）
 
 ---
 
@@ -96,10 +93,11 @@ twitter: {
 
 ---
 
-### 8. `/admin/users` ページのページネーション追加
+### ~~8. `/admin/users` ページのページネーション追加~~ ✅ 対応済み（021）
 
-**現状**: `GET /api/admin/users` と `/admin/users/page.tsx` はユーザー全件を `LIMIT` なしで取得している。ユーザー数が増えると DB・メモリ・転送量すべてに悪影響が出る。  
-**対応**: カーソルベースのページネーションを追加する（`/api/admin/campaigns` の実装パターンを流用）。
+**対応内容**（021 でマージ済み）:
+- `GET /api/admin/users` をカーソルベースページネーションに書き換え（`limit`/`cursor`/`frozen` パラメータ対応、レスポンス `{ users, nextCursor }`）
+- `/admin/users/page.tsx` に「次のページへ」ナビゲーションを追加（凍結フィルタとの組み合わせも対応）
 
 ---
 
@@ -112,15 +110,13 @@ twitter: {
 
 ## 🟢 P3 — 運用安定後に対応
 
-### 10. API ルートテストの追加
+### ~~10. API ルートテストの追加~~ ✅ 対応済み（021）
 
-**現状**: 以下のルートにテストがない:
-- `POST /api/admin/users/[id]/freeze`
-- `POST /api/admin/users/[id]/unfreeze`
-- `GET /api/admin/users`
-- `DELETE /api/admin/posts/[id]`
-
-**対応**: 既存の `src/app/api/admin/campaigns/__tests__/route.test.ts` パターンを参考に Vitest + `msw` でモックテストを追加する。特に凍結フローと権限チェックのテストを優先する。
+**対応内容**（021 でマージ済み）:
+- `POST /api/admin/users/[id]/freeze`（5 ケース: 403・403・404・409・200）
+- `POST /api/admin/users/[id]/unfreeze`（4 ケース: 403・403・409・200）
+- `GET /api/admin/users`（4 ケース: 403・403・200・400）
+- 全 60 テストが `pnpm test` でグリーン
 
 ---
 
@@ -166,7 +162,10 @@ twitter: {
 | DB 縮退 | 接続エラー時のフォールバック（空表示） | 008 |
 | 可観測性 | Vercel Analytics + Speed Insights | — |
 | レート制限 | Upstash Ratelimit ライブラリ定義（未適用） | 004 |
+| レート制限 | postWriteLimiter・adminLimiter を API ルートに接続（fail-open） | 021 |
 | ページネーション | /api/admin/campaigns カーソルページネーション | 015 |
+| ページネーション | /api/admin/users カーソルページネーション + UI | 021 |
+| テスト | freeze・unfreeze・users GET Vitest ユニットテスト（計 13 ケース） | 021 |
 | ポイント | キャンペーン・日次ポイント付与ロジック | 016 |
 | 管理 | 投稿論理削除 + 監査ログ | 018 |
 | 法的ページ | 利用規約・プライバシーポリシー・お問い合わせ | 019 |
