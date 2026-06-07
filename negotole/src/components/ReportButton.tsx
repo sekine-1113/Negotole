@@ -6,7 +6,7 @@ type Props = {
 
 export function ReportButton({ postId }: Props) {
   const baseUrl = process.env.NEXT_PUBLIC_REPORT_FORM_URL;
-  const href = baseUrl ? `${baseUrl}?entry.PLACEHOLDER=postId:${postId}` : "#";
+  const href = baseUrl ? `${baseUrl}?entry.1354923048=${postId}` : "#";
 
   return (
     <a
