@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { campaigns } from "@/lib/db/schema";
+import { adminAuditLogs, campaigns } from "@/lib/db/schema";
+import { log } from "@/lib/logger";
+import { headers } from "next/headers";
 import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -94,6 +96,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     .where(eq(campaigns.id, campaignId))
     .returning();
 
+  const adminId = Number(session.user.id);
+  const headersList = await headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    null;
+
+  try {
+    await db.insert(adminAuditLogs).values({
+      adminId,
+      action: "campaign.update",
+      targetType: "campaign",
+      targetId: campaignId,
+      payload: { campaignId, name: updated.name },
+      ipAddress: ip,
+    });
+  } catch {
+    // サイレント失敗
+  }
+  log("info", "admin.campaign.updated", { adminId, campaignId });
+
   return NextResponse.json({
     campaign: { ...updated, isActive: updated.startsAt <= now && updated.endsAt >= now },
   });
@@ -128,6 +151,27 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     .update(campaigns)
     .set({ deletedAt: new Date() })
     .where(eq(campaigns.id, campaignId));
+
+  const adminId = Number(session.user.id);
+  const headersList = await headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    null;
+
+  try {
+    await db.insert(adminAuditLogs).values({
+      adminId,
+      action: "campaign.delete",
+      targetType: "campaign",
+      targetId: campaignId,
+      payload: { campaignId },
+      ipAddress: ip,
+    });
+  } catch {
+    // サイレント失敗
+  }
+  log("info", "admin.campaign.deleted", { adminId, campaignId });
 
   return NextResponse.json({ success: true });
 }

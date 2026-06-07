@@ -3,6 +3,7 @@ import { posts, userPoints } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { log } from "@/lib/logger";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -83,9 +84,11 @@ export async function POST(request: NextRequest) {
   });
 
   if (!result) {
+    log("warn", "post.insufficient_points", { userId });
     return NextResponse.json({ error: "Insufficient points" }, { status: 402 });
   }
 
+  log("info", "post.created", { userId, postId: result.id });
   revalidateTag(`user-points-${userId}`, "max");
 
   return NextResponse.json({ post: result }, { status: 201 });

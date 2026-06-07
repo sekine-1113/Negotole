@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
-import { campaigns } from "@/lib/db/schema";
+import { adminAuditLogs, campaigns } from "@/lib/db/schema";
+import { log } from "@/lib/logger";
+import { headers } from "next/headers";
 import { and, desc, isNull, lt, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -106,6 +108,27 @@ export async function POST(req: NextRequest) {
     .insert(campaigns)
     .values({ name, description: description ?? null, startsAt: startsAtDate, endsAt: endsAtDate, bonusPoints, pointsType: pointsType ?? "permanent" })
     .returning();
+
+  const adminId = Number(session.user.id);
+  const headersList = await headers();
+  const ip =
+    headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    headersList.get("x-real-ip") ??
+    null;
+
+  try {
+    await db.insert(adminAuditLogs).values({
+      adminId,
+      action: "campaign.create",
+      targetType: "campaign",
+      targetId: created.id,
+      payload: { campaignId: created.id, name },
+      ipAddress: ip,
+    });
+  } catch {
+    // サイレント失敗
+  }
+  log("info", "admin.campaign.created", { adminId, campaignId: created.id });
 
   return NextResponse.json(
     { campaign: { ...created, isActive: created.startsAt <= now && created.endsAt >= now } },

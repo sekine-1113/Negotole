@@ -3,8 +3,10 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { revalidateTag } from "next/cache";
 import { db } from "./db";
-import { users } from "./db/schema";
+import { loginLogs, users } from "./db/schema";
 import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
+import { log } from "./logger";
 import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasCampaignApplied, hasDailyPointToday } from "./points";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -24,6 +26,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   session: { strategy: "jwt" },
   callbacks: {
     async jwt({ token, user, profile }) {
+      let isInitialSignIn = false;
+
       if (profile?.email) {
         const email = profile.email;
         const name = (profile.name as string | undefined) ?? email;
@@ -50,10 +54,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
 
         token.userId = userId;
+        isInitialSignIn = true;
       } else if (user?.id) {
         token.userId = Number(user.id);
         token.role = (user as { role?: string }).role ?? "user";
         token.isNewUser = true;
+        isInitialSignIn = true;
+      }
+
+      if (isInitialSignIn && token.userId) {
+        const headersList = await headers();
+        const ip =
+          headersList.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+          headersList.get("x-real-ip") ??
+          null;
+        const userAgent = headersList.get("user-agent") ?? null;
+        try {
+          await db.insert(loginLogs).values({
+            userId: Number(token.userId),
+            ipAddress: ip,
+            userAgent,
+          });
+        } catch {
+          // サイレント失敗
+        }
       }
 
       if (token.userId) {
@@ -65,7 +89,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             pointsChanged = true;
           }
         } catch (e) {
-          console.error("[auth] daily point grant failed:", e);
+          log("error", "auth.daily_points_failed", { userId: token.userId, error: String(e) });
         }
 
         try {
@@ -84,7 +108,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
         } catch (e) {
-          console.error("[auth] campaign point grant failed:", e);
+          log("error", "auth.campaign_points_failed", { userId: token.userId, error: String(e) });
         }
 
         if (pointsChanged) {
