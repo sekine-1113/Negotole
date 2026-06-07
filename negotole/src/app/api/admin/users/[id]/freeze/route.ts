@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { adminAuditLogs, users } from "@/lib/db/schema";
 import { log } from "@/lib/logger";
+import { adminLimiter } from "@/lib/ratelimit";
 import { eq, isNull } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
@@ -10,6 +11,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const session = await auth();
   if (!session?.user?.id || session.user.role !== "admin") {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const adminId = Number(session.user.id);
+  if (adminLimiter) {
+    try {
+      const { success } = await adminLimiter.limit(`user:${adminId}`);
+      if (!success) return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+    } catch (e) {
+      log("warn", "ratelimit.check_failed", { userId: adminId, error: String(e) });
+    }
   }
 
   const { id } = await params;
@@ -31,7 +42,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Already frozen" }, { status: 409 });
   }
 
-  const adminId = Number(session.user.id);
   const ip =
     req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
     req.headers.get("x-real-ip") ??

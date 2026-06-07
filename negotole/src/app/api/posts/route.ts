@@ -4,6 +4,7 @@ import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
 import { log } from "@/lib/logger";
+import { postWriteLimiter } from "@/lib/ratelimit";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -33,6 +34,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = Number(session.user.id);
+  if (postWriteLimiter) {
+    try {
+      const { success } = await postWriteLimiter.limit(`user:${userId}`);
+      if (!success) return NextResponse.json({ error: "Too Many Requests" }, { status: 429 });
+    } catch (e) {
+      log("warn", "ratelimit.check_failed", { userId, error: String(e) });
+    }
+  }
+
   const body = await request.json().catch(() => null);
   if (!body) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -47,7 +58,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
   }
 
-  const userId = Number(session.user.id);
   const hiddenAt = new Date(Date.now() + duration * 60 * 1000);
 
   const result = await db.transaction(async (tx) => {

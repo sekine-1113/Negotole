@@ -1,12 +1,14 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
-import { isNotNull } from "drizzle-orm";
+import { and, gt, isNotNull } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { FreezeButton } from "./FreezeButton";
 
+const PAGE_LIMIT = 20;
+
 interface Props {
-  searchParams: Promise<{ frozen?: string }>;
+  searchParams: Promise<{ frozen?: string; cursor?: string }>;
 }
 
 export default async function AdminUsersPage({ searchParams }: Props) {
@@ -15,10 +17,18 @@ export default async function AdminUsersPage({ searchParams }: Props) {
     redirect("/");
   }
 
-  const { frozen } = await searchParams;
+  const { frozen, cursor } = await searchParams;
   const filterFrozen = frozen === "true";
 
-  const query = db
+  let cursorId: number | null = null;
+  if (cursor) {
+    const decoded = Number(Buffer.from(cursor, "base64").toString());
+    if (Number.isSafeInteger(decoded) && decoded > 0) {
+      cursorId = decoded;
+    }
+  }
+
+  const rows = await db
     .select({
       id: users.id,
       name: users.name,
@@ -28,18 +38,35 @@ export default async function AdminUsersPage({ searchParams }: Props) {
       createdAt: users.createdAt,
     })
     .from(users)
-    .orderBy(users.id);
+    .where(
+      and(
+        cursorId ? gt(users.id, cursorId) : undefined,
+        filterFrozen ? isNotNull(users.bannedAt) : undefined,
+      ),
+    )
+    .orderBy(users.id)
+    .limit(PAGE_LIMIT + 1);
 
-  const rows = filterFrozen
-    ? await query.where(isNotNull(users.bannedAt))
-    : await query;
+  const hasMore = rows.length > PAGE_LIMIT;
+  const items = hasMore ? rows.slice(0, PAGE_LIMIT) : rows;
+  const nextCursor = hasMore
+    ? Buffer.from(String(items[items.length - 1].id)).toString("base64")
+    : null;
+
+  const nextParams = new URLSearchParams();
+  if (nextCursor) nextParams.set("cursor", nextCursor);
+  if (filterFrozen) nextParams.set("frozen", "true");
+
+  const toggleFrozenHref = filterFrozen
+    ? cursor ? `/admin/users` : `/admin/users`
+    : `/admin/users?frozen=true`;
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-indigo-100">ユーザー管理</h1>
         <a
-          href={filterFrozen ? "/admin/users" : "/admin/users?frozen=true"}
+          href={toggleFrozenHref}
           className={`px-3 py-1 rounded text-sm transition ${
             filterFrozen
               ? "bg-indigo-700 text-white"
@@ -64,7 +91,7 @@ export default async function AdminUsersPage({ searchParams }: Props) {
             </tr>
           </thead>
           <tbody>
-            {rows.map((user) => (
+            {items.map((user) => (
               <tr key={user.id} className="border-b border-slate-800 hover:bg-slate-900/50">
                 <td className="py-2 pr-4 text-slate-400">{user.id}</td>
                 <td className="py-2 pr-4 text-slate-100">{user.name}</td>
@@ -103,12 +130,23 @@ export default async function AdminUsersPage({ searchParams }: Props) {
             ))}
           </tbody>
         </table>
-        {rows.length === 0 && (
+        {items.length === 0 && (
           <p className="text-slate-400 text-sm mt-4">
             {filterFrozen ? "凍結中のユーザーはいません" : "ユーザーが見つかりません"}
           </p>
         )}
       </div>
+
+      {nextCursor && (
+        <div className="flex justify-end">
+          <a
+            href={`/admin/users?${nextParams.toString()}`}
+            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded text-sm transition"
+          >
+            次のページへ →
+          </a>
+        </div>
+      )}
     </div>
   );
 }
