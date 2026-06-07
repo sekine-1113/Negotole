@@ -39,7 +39,7 @@ export function BottomNav({ isAdmin }: Props) {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md bg-slate-950/80 border-t border-indigo-950/60 py-2">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 backdrop-blur-md bg-slate-950/80 border-t border-indigo-950/60 py-2 md:hidden">
       <div className="max-w-xl mx-auto px-4 flex items-center justify-around">
         {navItems.map((item) => {
           const isActive =

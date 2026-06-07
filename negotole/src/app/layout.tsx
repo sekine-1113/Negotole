@@ -7,6 +7,7 @@ import { FabButton } from "@/components/FabButton";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Footer } from "@/components/Footer";
 import "./globals.css";
 
 const mPlusRounded = M_PLUS_Rounded_1c({
@@ -40,9 +41,10 @@ export default async function RootLayout({
       lang="ja"
       className={`${mPlusRounded.variable} ${inter.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col pb-20">
+      <body className="min-h-full flex flex-col pb-20 md:pb-0">
         <Header />
         {children}
+        <Footer />
         <FabButton isLoggedIn={isLoggedIn} />
         <BottomNav isAdmin={isAdmin} />
         <ServiceWorkerRegistrar />
