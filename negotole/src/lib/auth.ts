@@ -1,13 +1,29 @@
 import NextAuth from "next-auth";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
-import { revalidateTag } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "./db";
 import { loginLogs, users } from "./db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { log } from "./logger";
 import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasCampaignApplied, hasDailyPointToday } from "./points";
+
+async function checkUserFrozen(userId: number): Promise<boolean> {
+  const check = unstable_cache(
+    async () => {
+      const [user] = await db
+        .select({ bannedAt: users.bannedAt })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+      return !!user?.bannedAt;
+    },
+    [`user-frozen-${userId}`],
+    { tags: [`user-frozen-${userId}`] },
+  );
+  return check();
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -25,6 +41,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ],
   session: { strategy: "jwt" },
   callbacks: {
+    async signIn({ user, profile }) {
+      const email = profile?.email ?? null;
+      if (email) {
+        const [existing] = await db
+          .select({ bannedAt: users.bannedAt })
+          .from(users)
+          .where(eq(users.email, email))
+          .limit(1);
+        if (existing?.bannedAt) return false;
+      } else if (user?.id) {
+        const [existing] = await db
+          .select({ bannedAt: users.bannedAt })
+          .from(users)
+          .where(eq(users.id, Number(user.id)))
+          .limit(1);
+        if (existing?.bannedAt) return false;
+      }
+      return true;
+    },
     async jwt({ token, user, profile }) {
       let isInitialSignIn = false;
 
@@ -81,6 +116,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       if (token.userId) {
+        // 凍結チェック（毎リクエスト、unstable_cache でキャッシュ）
+        try {
+          token.isFrozen = await checkUserFrozen(Number(token.userId));
+        } catch {
+          token.isFrozen = false;
+        }
+
+        if (!isInitialSignIn) return token;
+
         let pointsChanged = false;
         try {
           const alreadyGranted = await hasDailyPointToday(Number(token.userId));
@@ -125,6 +169,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (token.role) {
         session.user.role = token.role;
       }
+      session.user.isFrozen = token.isFrozen ?? false;
       return session;
     },
   },

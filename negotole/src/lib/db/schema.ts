@@ -12,6 +12,7 @@ export const users = pgTable("app_user", {
   email: varchar("email", { length: 255 }).unique(),
   role: varchar("role", { length: 20 }).notNull().default("user"),
   birthYear: integer("birth_year").notNull().default(0),
+  bannedAt: timestamp("banned_at"),
   ...commonColumns,
 });
 
