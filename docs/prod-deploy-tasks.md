@@ -35,30 +35,12 @@
 
 ---
 
-### 3. OGP / ソーシャルカードメタデータの設定
+### ~~3. OGP / ソーシャルカードメタデータの設定~~ ✅ 対応済み（022）
 
-**現状**: `src/app/layout.tsx` の `metadata` に `openGraph` / `twitter` フィールドが未設定。SNS でシェアされても画像・説明が表示されない。  
-**対応**: `layout.tsx` の `metadata` に以下を追加:
-
-```ts
-openGraph: {
-  title: "negotole",
-  description: "儚く消える、夜のつぶやき",
-  url: "https://<ドメイン>",
-  siteName: "negotole",
-  images: [{ url: "/og-image.png", width: 1200, height: 630 }],
-  locale: "ja_JP",
-  type: "website",
-},
-twitter: {
-  card: "summary_large_image",
-  title: "negotole",
-  description: "儚く消える、夜のつぶやき",
-  images: ["/og-image.png"],
-},
-```
-
-加えて `public/og-image.png`（1200×630px）を作成する。
+**対応内容**（022 でマージ済み）:
+- `src/app/layout.tsx` に `openGraph` + `twitter` フィールドを追加（title: "negotole", description: "儚く消える、夜のつぶやき", url: `https://negotole.vercel.app`）
+- `public/og-image.png`（1200×630px）を追加（現在はダーク単色プレースホルダー。後でテキスト入り画像に差し替え推奨）
+- `NEXT_PUBLIC_APP_URL` 環境変数で URL を制御（未設定時は `https://negotole.vercel.app` にフォールバック）
 
 ---
 
@@ -71,19 +53,18 @@ twitter: {
 
 ## 🟡 P2 — デプロイ直後に対応
 
-### 5. カスタム 404 ページ（`not-found.tsx`）の追加
+### ~~5. カスタム 404 ページ（`not-found.tsx`）の追加~~ ✅ 対応済み（022）
 
-**現状**: `src/app/error.tsx` はあるが `src/app/not-found.tsx` がない。存在しないパスへのアクセスで Next.js デフォルトの白い 404 が表示され、デザイン統一が崩れる。  
-**対応**: `src/app/not-found.tsx` を作成し、ダークテーマのデザインに合わせた 404 メッセージ＋トップへのリンクを表示する。
+**対応内容**（022 でマージ済み）:
+- `src/app/not-found.tsx` を新規作成（`bg-slate-950` ダークテーマ・「ページが見つかりません」・トップへのリンク）
 
 ---
 
-### 6. `robots.ts` / `sitemap.ts` の追加
+### ~~6. `robots.ts` / `sitemap.ts` の追加~~ ✅ 対応済み（022）
 
-**現状**: `robots.txt`・`sitemap.xml` が存在しない。検索エンジンが `/admin/*` や `/mypage` などをクロールしてしまう。  
-**対応**:
-- `src/app/robots.ts` → `/admin/*`、`/mypage`、`/account-suspended`、`/api/*` を `Disallow`
-- `src/app/sitemap.ts` → `/`、`/terms`、`/privacy`、`/contact` を列挙（投稿は揮発するため除外）
+**対応内容**（022 でマージ済み）:
+- `src/app/robots.ts` → `Disallow: ["/admin/", "/mypage", "/account-suspended", "/api/"]`、sitemap URL 付き
+- `src/app/sitemap.ts` → `/`・`/terms`・`/privacy`・`/contact` の 4 件を収録（投稿は揮発するため除外）
 
 ---
 
@@ -101,10 +82,12 @@ twitter: {
 
 ---
 
-### 9. `account-suspended` ページのレイアウト分離
+### ~~9. `account-suspended` ページのレイアウト分離~~ ✅ 対応済み（022）
 
-**現状**: `/account-suspended` は root layout を引き継ぐため、Header・BottomNav・FAB が表示される。凍結されたユーザーがこれらのリンクをクリックしても proxy でリダイレクトされ戻るが、UX が混乱しやすい。  
-**対応**: `src/app/account-suspended/layout.tsx` を作成して root layout から独立させ、最小限の表示のみにする（または root layout でパスを条件分岐する）。
+**対応内容**（022 でマージ済み）:
+- Route Group `src/app/(app)/` を導入し、Root Layout をナビなし最小構成に変更
+- 既存ページ（home・post・mypage・contact・terms・privacy・admin）を `(app)/` 配下に移動（URL 変化なし）
+- `account-suspended` は Root Layout のみ適用され、Header・BottomNav・FAB が表示されない状態を実現
 
 ---
 
@@ -166,6 +149,10 @@ twitter: {
 | ページネーション | /api/admin/campaigns カーソルページネーション | 015 |
 | ページネーション | /api/admin/users カーソルページネーション + UI | 021 |
 | テスト | freeze・unfreeze・users GET Vitest ユニットテスト（計 13 ケース） | 021 |
+| SEO | OGP メタタグ（openGraph + twitter）・og-image.png（1200×630px） | 022 |
+| SEO | robots.txt（Disallow 4 件）・sitemap.xml（公開 4 ページ） | 022 |
+| UX | カスタム 404 ページ（ダークテーマ + トップリンク） | 022 |
+| UX | account-suspended レイアウト分離（Route Group 導入、ナビなし） | 022 |
 | ポイント | キャンペーン・日次ポイント付与ロジック | 016 |
 | 管理 | 投稿論理削除 + 監査ログ | 018 |
 | 法的ページ | 利用規約・プライバシーポリシー・お問い合わせ | 019 |
