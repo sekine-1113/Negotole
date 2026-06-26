@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { PostCard } from "./PostCard";
 
 type Post = {
@@ -21,6 +21,10 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleExpire = useCallback((id: number) => {
+    setPosts((prev) => prev.filter((p) => p.id !== id));
+  }, []);
 
   async function loadMore() {
     if (!nextCursor || loading) return;
@@ -48,7 +52,12 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
         <p className="text-center text-indigo-300/60 py-12">まだ投稿がありません</p>
       )}
       {posts.map((post) => (
-        <PostCard key={post.id} post={post} isLoggedIn={isLoggedIn} />
+        <PostCard
+          key={post.id}
+          post={post}
+          isLoggedIn={isLoggedIn}
+          onExpire={() => handleExpire(post.id)}
+        />
       ))}
       {error && (
         <p className="text-center text-red-400/80 text-sm py-2">{error}</p>

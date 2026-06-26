@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -105,7 +106,16 @@ export default function EditCampaignPage() {
 
   return (
     <div className="max-w-lg">
-      <h1 className="text-2xl font-bold mb-6">キャンペーン編集</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold">キャンペーン編集</h1>
+        <Link
+          href={`/admin/campaigns/${id}/applications`}
+          className="text-sm text-indigo-400 hover:text-indigo-200 transition"
+        >
+          応募状況を確認 →
+        </Link>
+      </div>
+
 
       {error && (
         <div className="bg-red-100 text-red-800 border border-red-300 rounded p-3 mb-4 text-sm">

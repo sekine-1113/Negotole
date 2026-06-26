@@ -11,15 +11,16 @@ type Post = {
 type Props = {
   post: Post;
   isLoggedIn: boolean;
+  onExpire?: () => void;
 };
 
-export function PostCard({ post, isLoggedIn }: Props) {
+export function PostCard({ post, isLoggedIn, onExpire }: Props) {
   return (
     <article className="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-4 backdrop-blur-md shadow-xl relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
       <p className="text-slate-100 whitespace-pre-wrap break-words text-sm mb-3">{post.content}</p>
       <div className="flex items-center justify-between">
-        <CountdownTimer hiddenAt={post.hiddenAt} createdAt={post.createdAt} />
+        <CountdownTimer hiddenAt={post.hiddenAt} createdAt={post.createdAt} onExpire={onExpire} />
         {isLoggedIn && <ReportButton postId={post.id} />}
       </div>
     </article>
