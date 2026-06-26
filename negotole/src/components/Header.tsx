@@ -2,6 +2,7 @@ import { auth, signIn, signOut } from "@/lib/auth";
 import { getCachedPointBalance } from "@/lib/points";
 import { Moon } from "lucide-react";
 import Link from "next/link";
+import { GuestLoginButton } from "./GuestLoginButton";
 import { PointBadge } from "./PointBadge";
 
 export async function Header() {
@@ -79,19 +80,7 @@ export async function Header() {
                   </button>
                 </form>
               )}
-              <form
-                action={async () => {
-                  "use server";
-                  await signIn("credentials", { redirectTo: "/" });
-                }}
-              >
-                <button
-                  type="submit"
-                  className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-4 py-2 min-h-[44px] inline-flex items-center shadow-lg shadow-indigo-500/20 transition sm:text-sm"
-                >
-                  ゲストとしてログイン
-                </button>
-              </form>
+              <GuestLoginButton />
             </div>
           )}
         </div>

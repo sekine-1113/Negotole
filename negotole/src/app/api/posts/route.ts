@@ -15,6 +15,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
   const limit = Number(searchParams.get("limit") ?? 20);
+  const sinceParam = searchParams.get("since");
 
   let cursorId: number | null = null;
   if (cursor) {
@@ -25,7 +26,16 @@ export async function GET(request: NextRequest) {
     cursorId = decoded;
   }
 
-  const result = await fetchPosts({ cursorId, limit });
+  let sinceId: number | null = null;
+  if (sinceParam) {
+    const decoded = Number(Buffer.from(sinceParam, "base64").toString());
+    if (!Number.isSafeInteger(decoded) || decoded <= 0) {
+      return NextResponse.json({ error: "Invalid since" }, { status: 400 });
+    }
+    sinceId = decoded;
+  }
+
+  const result = await fetchPosts({ cursorId, sinceId, limit });
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
