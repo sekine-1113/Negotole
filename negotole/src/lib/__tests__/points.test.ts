@@ -15,7 +15,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-import { getPointBalance, hasDailyPointToday, grantDailyPoints, consumeOnePoint, getActiveCampaign, grantCampaignPoints } from "@/lib/points";
+import { getPointBalance, hasDailyPointToday, grantDailyPoints, getActiveCampaign, grantCampaignPoints } from "@/lib/points";
 
 describe("getPointBalance", () => {
   beforeEach(() => {
@@ -91,40 +91,6 @@ describe("grantDailyPoints", () => {
 
     // expiresAt が JST 当日の 23:59:59 であること
     // CI は UTC で動作するため、JST オフセット（+9h）を加えて比較する
-    const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-    const expiresAt = insertArg.expiresAt as Date;
-    const now = new Date();
-    const nowJST = new Date(now.getTime() + JST_OFFSET_MS);
-    const expiresAtJST = new Date(expiresAt.getTime() + JST_OFFSET_MS);
-
-    expect(expiresAtJST.getUTCFullYear()).toBe(nowJST.getUTCFullYear());
-    expect(expiresAtJST.getUTCMonth()).toBe(nowJST.getUTCMonth());
-    expect(expiresAtJST.getUTCDate()).toBe(nowJST.getUTCDate());
-    expect(expiresAtJST.getUTCHours()).toBe(23);
-    expect(expiresAtJST.getUTCMinutes()).toBe(59);
-    expect(expiresAtJST.getUTCSeconds()).toBe(59);
-  });
-});
-
-describe("consumeOnePoint", () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it("userId=1 に -1pt、当日 23:59:59 の expiresAt で INSERT する", async () => {
-    const mockValues = vi.fn().mockResolvedValue(undefined);
-    mockInsert.mockReturnValueOnce({ values: mockValues });
-
-    await consumeOnePoint(1);
-
-    expect(mockInsert).toHaveBeenCalledOnce();
-    expect(mockValues).toHaveBeenCalledOnce();
-
-    const [insertArg] = mockValues.mock.calls[0];
-    expect(insertArg.userId).toBe(1);
-    expect(insertArg.getPoint).toBe(-1);
-
-    // expiresAt が JST 当日の 23:59:59 であること（grantDailyPoints と同じ失効タイミング）
     const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
     const expiresAt = insertArg.expiresAt as Date;
     const now = new Date();

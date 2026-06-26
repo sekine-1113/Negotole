@@ -17,8 +17,8 @@ export default function NewCampaignPage() {
     const data = {
       name: (form.elements.namedItem("name") as HTMLInputElement).value,
       description: (form.elements.namedItem("description") as HTMLTextAreaElement).value || undefined,
-      startsAt: (form.elements.namedItem("startsAt") as HTMLInputElement).value,
-      endsAt: (form.elements.namedItem("endsAt") as HTMLInputElement).value,
+      startsAt: new Date((form.elements.namedItem("startsAt") as HTMLInputElement).value).toISOString(),
+      endsAt: new Date((form.elements.namedItem("endsAt") as HTMLInputElement).value).toISOString(),
       bonusPoints: Number((form.elements.namedItem("bonusPoints") as HTMLInputElement).value),
       pointsType: (form.elements.namedItem("pointsType") as HTMLInputElement).value,
     };

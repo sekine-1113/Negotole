@@ -5,6 +5,37 @@ import { log } from "@/lib/logger";
 import { and, eq, isNull, ne, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  if (session.user.role !== "admin") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const { id } = await params;
+  const campaignId = Number(id);
+  if (isNaN(campaignId)) {
+    return NextResponse.json({ error: "Invalid id" }, { status: 400 });
+  }
+
+  const [campaign] = await db
+    .select()
+    .from(campaigns)
+    .where(and(eq(campaigns.id, campaignId), isNull(campaigns.deletedAt)))
+    .limit(1);
+
+  if (!campaign) {
+    return NextResponse.json({ error: "Campaign not found" }, { status: 404 });
+  }
+
+  const now = new Date();
+  return NextResponse.json({
+    campaign: { ...campaign, isActive: campaign.startsAt <= now && campaign.endsAt >= now },
+  });
+}
+
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {

@@ -6,7 +6,7 @@ import type { Campaign } from "./db/schema";
 
 const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
 
-function getJSTDayBounds(): { todayStart: Date; todayEnd: Date } {
+export function getJSTDayBounds(): { todayStart: Date; todayEnd: Date } {
   const nowUTC = Date.now();
   const nowJST = new Date(nowUTC + JST_OFFSET_MS);
 
@@ -90,15 +90,6 @@ export function getCachedPointBalance(userId: number): Promise<{ daily: number; 
     [`point-balance-${userId}`],
     { tags: [`user-points-${userId}`], revalidate: false }
   )();
-}
-
-export async function consumeOnePoint(userId: number): Promise<void> {
-  const { todayEnd } = getJSTDayBounds();
-  await db.insert(userPoints).values({
-    userId,
-    getPoint: -1,
-    expiresAt: todayEnd,
-  });
 }
 
 export async function getActiveCampaign(): Promise<Campaign | null> {

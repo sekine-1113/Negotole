@@ -123,8 +123,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           token.isFrozen = false;
         }
 
-        if (!isInitialSignIn) return token;
-
         let pointsChanged = false;
         try {
           const alreadyGranted = await hasDailyPointToday(Number(token.userId));
@@ -134,6 +132,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
         } catch (e) {
           log("error", "auth.daily_points_failed", { userId: token.userId, error: String(e) });
+        }
+
+        if (!isInitialSignIn) {
+          if (pointsChanged) revalidateTag(`user-points-${token.userId}`, "max");
+          return token;
         }
 
         try {
