@@ -3,6 +3,7 @@ import { posts, userPoints } from "@/lib/db/schema";
 import { sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import { auth } from "@/lib/auth";
+import { getJSTDayBounds } from "@/lib/points";
 import { log } from "@/lib/logger";
 import { postWriteLimiter } from "@/lib/ratelimit";
 import { revalidateTag } from "next/cache";
@@ -78,6 +79,18 @@ export async function POST(request: NextRequest) {
       return null;
     }
 
+    // デイリー残高が残っていれば今日期限、なければ恒久（null）で消費
+    const dailyRows = await tx.execute(sql`
+      SELECT COALESCE(SUM(get_point), 0) AS daily
+      FROM user_point
+      WHERE user_id = ${userId}
+        AND deleted_at IS NULL
+        AND expires_at IS NOT NULL
+        AND expires_at > NOW()
+    `);
+    const daily = Number(((dailyRows as unknown) as { rows: { daily: string }[] }).rows[0]?.daily ?? 0);
+    const { todayEnd } = getJSTDayBounds();
+
     const [post] = await tx.insert(posts).values({
       userId,
       content: content.trim(),
@@ -87,7 +100,7 @@ export async function POST(request: NextRequest) {
     await tx.insert(userPoints).values({
       userId,
       getPoint: -1,
-      expiresAt: null,
+      expiresAt: daily > 0 ? todayEnd : null,
     });
 
     return post;

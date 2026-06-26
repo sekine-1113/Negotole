@@ -20,15 +20,23 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function loadMore() {
     if (!nextCursor || loading) return;
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch(`/api/posts?cursor=${nextCursor}`);
+      if (!res.ok) {
+        setError("読み込みに失敗しました");
+        return;
+      }
       const data = await res.json();
       setPosts((prev) => [...prev, ...data.posts]);
       setNextCursor(data.nextCursor);
+    } catch {
+      setError("読み込みに失敗しました");
     } finally {
       setLoading(false);
     }
@@ -42,6 +50,9 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
       {posts.map((post) => (
         <PostCard key={post.id} post={post} isLoggedIn={isLoggedIn} />
       ))}
+      {error && (
+        <p className="text-center text-red-400/80 text-sm py-2">{error}</p>
+      )}
       {nextCursor && (
         <button
           onClick={loadMore}

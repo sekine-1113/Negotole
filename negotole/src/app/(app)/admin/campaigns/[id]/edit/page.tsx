@@ -23,14 +23,13 @@ export default function EditCampaignPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetch("/api/admin/campaigns")
+    fetch(`/api/admin/campaigns/${id}`)
       .then((r) => r.json())
       .then((data) => {
-        const found = data.campaigns?.find((c: Campaign) => String(c.id) === id);
-        if (found) {
-          setCampaign(found);
+        if (data.campaign) {
+          setCampaign(data.campaign);
         } else {
-          setError("キャンペーンが見つかりません。");
+          setError(data.error ?? "キャンペーンが見つかりません。");
         }
       })
       .catch(() => setError("読み込みに失敗しました。"));
