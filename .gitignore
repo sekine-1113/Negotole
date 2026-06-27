@@ -11,8 +11,7 @@ negotole/node_modules/
 # ビルド成果物
 negotole/dist/
 
-# Drizzle マイグレーション生成物（生成コマンドで再作成できるため）
-negotole/drizzle/
+# Drizzle（マイグレーション SQL はバージョン管理対象のため除外しない）
 
 # pnpm
 negotole/.pnpm-store/
