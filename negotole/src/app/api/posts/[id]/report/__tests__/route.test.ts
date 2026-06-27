@@ -89,7 +89,8 @@ describe("POST /api/posts/[id]/report", () => {
 
   it("正常な通報 → 201", async () => {
     mockAuth.mockResolvedValueOnce({ user: { id: "1" } });
-    mockDbFind([{ id: 5 }]);
+    mockDbFind([{ id: 5 }]); // 投稿存在チェック
+    mockDbFind([]);           // 重複通報チェック（未通報）
     mockDbInsert();
     const [req, ctx] = makeRequest("5", { reason: "スパム" });
     const res = await POST(req, ctx);
