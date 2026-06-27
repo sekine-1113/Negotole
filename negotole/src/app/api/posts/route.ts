@@ -8,8 +8,7 @@ import { log } from "@/lib/logger";
 import { postWriteLimiter } from "@/lib/ratelimit";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-
-const VALID_DURATIONS = [60, 180, 360, 720, 1440] as const;
+import { POST_COST_BY_DURATION, VALID_DURATIONS } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -73,6 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
   }
 
+  const cost = POST_COST_BY_DURATION[duration];
   const hiddenAt = new Date(Date.now() + duration * 60 * 1000);
 
   const result = await db.transaction(async (tx) => {
@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       ) locked
     `);
     const total = Number(((balanceRows as unknown) as { rows: { total: string }[] }).rows[0]?.total ?? 0);
-    if (total < 1) {
+    if (total < cost) {
       return null;
     }
 
@@ -113,8 +113,8 @@ export async function POST(request: NextRequest) {
 
     await tx.insert(userPoints).values({
       userId,
-      getPoint: -1,
-      expiresAt: daily > 0 ? todayEnd : null,
+      getPoint: -cost,
+      expiresAt: daily >= cost ? todayEnd : null,
     });
 
     return post;

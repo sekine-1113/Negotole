@@ -1,5 +1,6 @@
 "use client";
 
+import { POST_COST_BY_DURATION } from "@/lib/constants";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Send } from "lucide-react";
@@ -19,11 +20,12 @@ type Props = {
 export function PostForm({ totalPoints }: Props) {
   const router = useRouter();
   const [content, setContent] = useState("");
-  const [duration, setDuration] = useState<number | null>(720);
+  const [duration, setDuration] = useState<number>(720);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const canSubmit = content.trim().length > 0 && duration !== null && totalPoints >= 1 && !submitting;
+  const cost = POST_COST_BY_DURATION[duration] ?? 1;
+  const canSubmit = content.trim().length > 0 && totalPoints >= cost && !submitting;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -71,8 +73,8 @@ export function PostForm({ totalPoints }: Props) {
           <div className="flex items-center justify-between mb-3">
             <span className="text-xs text-indigo-300 font-bold">漂う時間を選択:</span>
             <span className="text-xs text-slate-400">
-              消費ポイント: <span className="text-amber-300 font-black text-sm">1</span>{" "}
-              <span className="text-[10px]">pt (固定)</span>
+              消費ポイント: <span className="text-amber-300 font-black text-sm">{cost}</span>{" "}
+              <span className="text-[10px]">pt</span>
             </span>
           </div>
           <div className="grid grid-cols-5 gap-2">
@@ -87,7 +89,8 @@ export function PostForm({ totalPoints }: Props) {
                     : "border-indigo-950/80 bg-slate-950/40 text-slate-400 hover:text-slate-200 hover:bg-slate-900/60"
                 }`}
               >
-                {d.label}
+                <span>{d.label}</span>
+                <span className="block text-[9px] mt-0.5 opacity-60">{POST_COST_BY_DURATION[d.value]}pt</span>
               </button>
             ))}
           </div>
@@ -95,7 +98,7 @@ export function PostForm({ totalPoints }: Props) {
 
         <div className="flex items-center justify-between">
           <p className="text-xs text-slate-400">残ポイント: {totalPoints}pt</p>
-          {totalPoints < 1 && (
+          {totalPoints < cost && (
             <p className="text-xs text-pink-400">ポイント不足です</p>
           )}
         </div>
@@ -108,7 +111,7 @@ export function PostForm({ totalPoints }: Props) {
           className="w-full mt-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold text-sm py-2.5 px-6 rounded-full shadow-lg shadow-indigo-500/20 flex items-center gap-1.5 justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-all active:scale-95"
         >
           <Send className="w-3.5 h-3.5" />
-          {submitting ? "投稿中..." : "寝言を放つ (1pt)"}
+          {submitting ? "投稿中..." : `寝言を放つ (${cost}pt)`}
         </button>
       </div>
     </form>

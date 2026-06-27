@@ -3,8 +3,8 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "./db";
-import { loginLogs, users } from "./db/schema";
-import { and, eq, isNull } from "drizzle-orm";
+import { guestUsers, loginLogs, users } from "./db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { log } from "./logger";
 import { grantCampaignPoints, grantDailyPoints, getActiveCampaign, hasCampaignApplied, hasDailyPointToday } from "./points";
@@ -29,28 +29,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google,
     Credentials({
-      credentials: { guestUserId: { type: "text" } },
+      credentials: { guestToken: { type: "text" } },
       async authorize(credentials) {
-        const rawId = (credentials as { guestUserId?: string } | null)?.guestUserId;
-        if (rawId) {
-          const existingId = Number(rawId);
-          if (Number.isSafeInteger(existingId) && existingId > 0) {
-            const [existing] = await db
+        const guestToken = (credentials as { guestToken?: string } | null)?.guestToken;
+
+        if (guestToken && /^[0-9a-f]{32}$/.test(guestToken)) {
+          const [guestUser] = await db
+            .select({ appUserId: guestUsers.appUserId })
+            .from(guestUsers)
+            .where(eq(guestUsers.guestId, guestToken))
+            .limit(1);
+          if (guestUser) {
+            const [appUser] = await db
               .select({ id: users.id, role: users.role, bannedAt: users.bannedAt })
               .from(users)
-              .where(and(eq(users.id, existingId), isNull(users.email), isNull(users.deletedAt)))
+              .where(eq(users.id, guestUser.appUserId))
               .limit(1);
-            if (existing) {
-              if (existing.bannedAt) return null;
-              return { id: String(existing.id), name: "ゲスト", role: existing.role };
+            if (appUser) {
+              if (appUser.bannedAt) return null;
+              return { id: String(appUser.id), name: "ゲスト", role: appUser.role, guestToken };
             }
           }
         }
-        const [guest] = await db
+
+        // 新規ゲスト作成
+        const newGuestToken = crypto.randomUUID().replace(/-/g, "");
+        const [appUser] = await db
           .insert(users)
           .values({ name: "ゲスト" })
           .returning({ id: users.id, role: users.role });
-        return { id: String(guest.id), name: "ゲスト", role: guest.role };
+        await db.insert(guestUsers).values({ guestId: newGuestToken, appUserId: appUser.id });
+        return { id: String(appUser.id), name: "ゲスト", role: appUser.role, guestToken: newGuestToken };
       },
     }),
   ],
@@ -110,6 +119,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = (user as { role?: string }).role ?? "user";
         token.isNewUser = true;
         token.isGuest = true;
+        token.guestToken = (user as { guestToken?: string }).guestToken;
         isInitialSignIn = true;
       }
 
@@ -190,6 +200,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
       session.user.isFrozen = token.isFrozen ?? false;
       session.user.isGuest = token.isGuest ?? false;
+      if (token.guestToken) {
+        session.user.guestToken = token.guestToken as string;
+      }
       return session;
     },
   },

@@ -3,13 +3,13 @@
 import { guestSignIn } from "@/lib/actions";
 import { useEffect, useRef } from "react";
 
-const GUEST_ID_KEY = "negotole_guest_id";
+const GUEST_TOKEN_KEY = "negotole_guest_token";
 
 export function GuestLoginButton() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(GUEST_ID_KEY);
+    const stored = localStorage.getItem(GUEST_TOKEN_KEY);
     if (stored && inputRef.current) {
       inputRef.current.value = stored;
     }
@@ -17,7 +17,7 @@ export function GuestLoginButton() {
 
   return (
     <form action={guestSignIn}>
-      <input ref={inputRef} type="hidden" name="guestUserId" defaultValue="" />
+      <input ref={inputRef} type="hidden" name="guestToken" defaultValue="" />
       <input type="hidden" name="redirectTo" value="/" />
       <button
         type="submit"

@@ -99,6 +99,21 @@ export const reports = pgTable("report", {
   uniqueIndex("report_post_reporter_uidx").on(t.postId, t.reporterId),
 ]);
 
+export const guestUsers = pgTable("guest_user", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  guestId: varchar("guest_id", { length: 64 }).notNull(),
+  appUserId: bigint("app_user_id", { mode: "number" }).notNull().references(() => users.id, { onDelete: "cascade" }),
+  transferCode: varchar("transfer_code", { length: 8 }),
+  transferCodeExpiresAt: timestamp("transfer_code_expires_at"),
+  transferredAt: timestamp("transferred_at"),
+  transferredToUserId: bigint("transferred_to_user_id", { mode: "number" }).references(() => users.id, { onDelete: "set null" }),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at"),
+}, (t) => [
+  uniqueIndex("guest_user_guest_id_uidx").on(t.guestId),
+  index("guest_user_transfer_code_idx").on(t.transferCode),
+]);
+
 export type User = typeof users.$inferSelect;
 export type UserPoint = typeof userPoints.$inferSelect;
 export type Post = typeof posts.$inferSelect;
@@ -107,3 +122,4 @@ export type CampaignApplication = typeof campaignApplications.$inferSelect;
 export type LoginLog = typeof loginLogs.$inferSelect;
 export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
 export type Report = typeof reports.$inferSelect;
+export type GuestUser = typeof guestUsers.$inferSelect;
