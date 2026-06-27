@@ -8,6 +8,7 @@ declare module "next-auth/jwt" {
     role?: string;
     isFrozen?: boolean;
     isGuest?: boolean;
+    guestToken?: string;
   }
 }
 
@@ -18,6 +19,7 @@ declare module "next-auth" {
       role?: string;
       isFrozen?: boolean;
       isGuest?: boolean;
+      guestToken?: string;
     } & DefaultSession["user"];
   }
 }

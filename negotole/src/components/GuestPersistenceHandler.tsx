@@ -2,19 +2,18 @@
 
 import { useEffect } from "react";
 
-const GUEST_ID_KEY = "negotole_guest_id";
+const GUEST_TOKEN_KEY = "negotole_guest_token";
 
 type Props = {
-  userId: string | null;
-  isGuest: boolean;
+  guestToken: string | null;
 };
 
-export function GuestPersistenceHandler({ userId, isGuest }: Props) {
+export function GuestPersistenceHandler({ guestToken }: Props) {
   useEffect(() => {
-    if (isGuest && userId) {
-      localStorage.setItem(GUEST_ID_KEY, userId);
+    if (guestToken) {
+      localStorage.setItem(GUEST_TOKEN_KEY, guestToken);
     }
-  }, [userId, isGuest]);
+  }, [guestToken]);
 
   return null;
 }

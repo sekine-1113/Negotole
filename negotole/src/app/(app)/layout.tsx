@@ -24,8 +24,7 @@ export default async function AppLayout({
       <BottomNav isAdmin={isAdmin} />
       <ServiceWorkerRegistrar />
       <GuestPersistenceHandler
-        userId={session?.user?.id ?? null}
-        isGuest={session?.user?.isGuest ?? false}
+        guestToken={session?.user?.guestToken ?? null}
       />
     </>
   );

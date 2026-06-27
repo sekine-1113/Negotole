@@ -1,5 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getPointBalance } from "@/lib/points";
+import { ClaimTransferSection } from "@/components/ClaimTransferSection";
+import { TransferCodeSection } from "@/components/TransferCodeSection";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -60,7 +62,15 @@ export default async function MyPage() {
           </p>
         </div>
 
-        <div className="mt-4 flex flex-col gap-2">
+        <div className="mt-4 mb-4">
+          {session.user.isGuest ? (
+            <TransferCodeSection />
+          ) : (
+            <ClaimTransferSection />
+          )}
+        </div>
+
+        <div className="flex flex-col gap-2">
           <Link
             href="/mypage/points"
             className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/50 border border-indigo-950/40 hover:border-indigo-700/50 text-indigo-300 hover:text-indigo-100 text-sm transition"
@@ -76,6 +86,7 @@ export default async function MyPage() {
             <span className="text-slate-500 text-xs">→</span>
           </Link>
         </div>
+
       </section>
     </main>
   );
