@@ -141,6 +141,27 @@ JST 境界ロジックを変更する際に片方だけ修正されると、ダ�
 
 ---
 
+---
+
+## 設計変更決定事項
+
+### ゲストアカウント永続化を削除する
+
+`GuestLoginButton` / `GuestPersistenceHandler` / `auth.ts` の `guestUserId` 対応は**削除する**。
+
+**理由:** `guestUserId` は連番 BigInt のため列挙可能。ID を知っていれば他人のゲストセッションに成り済まし可能（ポイント横取り・投稿成り済ましのリスク）。トークン検証で修正する案もあるが、そもそもゲスト永続化は不要と判断。
+
+**削除対象:**
+- `negotole/src/components/GuestLoginButton.tsx`
+- `negotole/src/components/GuestPersistenceHandler.tsx`
+- `negotole/src/lib/actions.ts`（`guestSignIn` のみ使用している場合）
+- `negotole/src/app/(app)/layout.tsx` — `GuestPersistenceHandler` の呼び出し
+- `negotole/src/components/Header.tsx` — `GuestLoginButton` → 元の Server Component インラインフォームに戻す
+- `negotole/src/lib/auth.ts` — `guestUserId` 受け取りロジック・`isGuest` フラグ（不要になる場合）
+- `negotole/src/types/next-auth.d.ts` — `isGuest` 型定義（不要になる場合）
+
+---
+
 ## 修正優先度サマリー
 
 | # | 重大度 | ファイル | 行 | 概要 |
