@@ -179,7 +179,7 @@ describe("grantCampaignPoints", () => {
 
     mockTransaction.mockImplementation(async (callback: (tx: { insert: (table: unknown) => { values: (v: Record<string, unknown>) => Promise<void> } }) => Promise<void>) => {
       const tx = {
-        insert: (_table: unknown) => ({
+        insert: (_: unknown) => ({
           values: (v: Record<string, unknown>) => {
             insertedValues.push(v);
             return Promise.resolve(undefined);

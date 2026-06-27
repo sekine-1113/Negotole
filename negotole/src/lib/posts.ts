@@ -4,6 +4,7 @@ import { and, gt, isNull, lt, sql } from "drizzle-orm";
 
 export type FetchPostsOptions = {
   cursorId?: number | null;
+  sinceId?: number | null;
   limit?: number;
 };
 
@@ -19,7 +20,7 @@ export type FetchPostsResult = {
   nextCursor: string | null;
 };
 
-export async function fetchPosts({ cursorId, limit = 20 }: FetchPostsOptions = {}): Promise<FetchPostsResult> {
+export async function fetchPosts({ cursorId, sinceId, limit = 20 }: FetchPostsOptions = {}): Promise<FetchPostsResult> {
   const effectiveLimit = Math.min(limit, 50);
 
   const rows = await db
@@ -34,7 +35,8 @@ export async function fetchPosts({ cursorId, limit = 20 }: FetchPostsOptions = {
       and(
         gt(posts.hiddenAt, sql`NOW()`),
         isNull(posts.deletedAt),
-        cursorId ? lt(posts.id, cursorId) : undefined
+        cursorId ? lt(posts.id, cursorId) : undefined,
+        sinceId ? gt(posts.id, sinceId) : undefined
       )
     )
     .orderBy(sql`${posts.id} DESC`)

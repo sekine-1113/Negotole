@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { FabButton } from "@/components/FabButton";
+import { GuestPersistenceHandler } from "@/components/GuestPersistenceHandler";
 import { ServiceWorkerRegistrar } from "@/components/ServiceWorkerRegistrar";
 import { Footer } from "@/components/Footer";
 
@@ -22,6 +23,10 @@ export default async function AppLayout({
       <FabButton isLoggedIn={isLoggedIn} />
       <BottomNav isAdmin={isAdmin} />
       <ServiceWorkerRegistrar />
+      <GuestPersistenceHandler
+        userId={session?.user?.id ?? null}
+        isGuest={session?.user?.isGuest ?? false}
+      />
     </>
   );
 }

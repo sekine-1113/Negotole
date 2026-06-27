@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 function formatRemaining(ms: number): string {
   if (ms <= 0) return "期限切れ";
@@ -13,9 +13,22 @@ function formatRemaining(ms: number): string {
   return `あと ${seconds}秒`;
 }
 
-export function CountdownTimer({ hiddenAt, createdAt }: { hiddenAt: string; createdAt: string }) {
+export function CountdownTimer({
+  hiddenAt,
+  createdAt,
+  onExpire,
+}: {
+  hiddenAt: string;
+  createdAt: string;
+  onExpire?: () => void;
+}) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
+  const expiredRef = useRef(false);
+  const onExpireRef = useRef(onExpire);
+  useLayoutEffect(() => {
+    onExpireRef.current = onExpire;
+  });
 
   useEffect(() => {
     const total = new Date(hiddenAt).getTime() - new Date(createdAt).getTime();
@@ -26,16 +39,18 @@ export function CountdownTimer({ hiddenAt, createdAt }: { hiddenAt: string; crea
       return { rem, prog: total > 0 ? (elapsed / total) * 100 : 100 };
     };
 
-    const initial = setTimeout(() => {
+    const tick = () => {
       const { rem, prog } = calc();
       setRemaining(rem);
       setProgress(prog);
-    }, 0);
-    const timer = setInterval(() => {
-      const { rem, prog } = calc();
-      setRemaining(rem);
-      setProgress(prog);
-    }, 1000);
+      if (rem <= 0 && !expiredRef.current) {
+        expiredRef.current = true;
+        onExpireRef.current?.();
+      }
+    };
+
+    const initial = setTimeout(tick, 0);
+    const timer = setInterval(tick, 1000);
     return () => {
       clearTimeout(initial);
       clearInterval(timer);

@@ -11,8 +11,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div>
-      <nav className="bg-slate-900/80 backdrop-blur-md border-b border-indigo-950/50 px-6 py-3 flex gap-4 items-center">
+      <nav className="bg-slate-900/80 backdrop-blur-md border-b border-indigo-950/50 px-6 py-3 flex gap-4 items-center flex-wrap">
         <span className="font-bold text-indigo-200">管理パネル</span>
+        <Link href="/admin" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
+          ダッシュボード
+        </Link>
         <Link href="/admin/campaigns" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
           キャンペーン管理
         </Link>
@@ -21,6 +24,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </Link>
         <Link href="/admin/users" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
           ユーザー管理
+        </Link>
+        <Link href="/admin/reports" className="text-indigo-300 hover:text-indigo-100 text-sm transition">
+          通報管理
         </Link>
         <Link href="/" className="ml-auto text-indigo-300 hover:text-indigo-100 text-sm transition">
           サイトへ戻る

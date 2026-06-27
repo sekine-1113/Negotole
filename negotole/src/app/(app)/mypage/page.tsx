@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getPointBalance } from "@/lib/points";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 export default async function MyPage() {
@@ -57,6 +58,23 @@ export default async function MyPage() {
           <p className="text-[11px] text-slate-500">
             ユーザー自身による購入や手動チャージはありません。期間限定ポイントは毎日のキャンペーンなどで入手可能です。
           </p>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2">
+          <Link
+            href="/mypage/points"
+            className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/50 border border-indigo-950/40 hover:border-indigo-700/50 text-indigo-300 hover:text-indigo-100 text-sm transition"
+          >
+            <span>ポイント履歴</span>
+            <span className="text-slate-500 text-xs">→</span>
+          </Link>
+          <Link
+            href="/mypage/posts"
+            className="flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-950/50 border border-indigo-950/40 hover:border-indigo-700/50 text-indigo-300 hover:text-indigo-100 text-sm transition"
+          >
+            <span>自分の投稿履歴</span>
+            <span className="text-slate-500 text-xs">→</span>
+          </Link>
         </div>
       </section>
     </main>

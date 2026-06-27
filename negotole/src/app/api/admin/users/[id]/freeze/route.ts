@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { adminAuditLogs, users } from "@/lib/db/schema";
 import { log } from "@/lib/logger";
 import { adminLimiter } from "@/lib/ratelimit";
-import { eq, isNull } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 

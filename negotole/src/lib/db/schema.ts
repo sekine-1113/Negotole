@@ -86,6 +86,19 @@ export const adminAuditLogs = pgTable("admin_audit_log", {
   index("admin_audit_log_created_at_idx").on(t.createdAt),
 ]);
 
+export const reports = pgTable("report", {
+  id: bigint("id", { mode: "number" }).primaryKey().generatedAlwaysAsIdentity(),
+  postId: bigint("post_id", { mode: "number" }).notNull().references(() => posts.id, { onDelete: "cascade" }),
+  reporterId: bigint("reporter_id", { mode: "number" }).references(() => users.id, { onDelete: "set null" }),
+  reason: varchar("reason", { length: 255 }).notNull(),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+}, (t) => [
+  index("report_post_id_idx").on(t.postId),
+  index("report_created_at_idx").on(t.createdAt),
+  uniqueIndex("report_post_reporter_uidx").on(t.postId, t.reporterId),
+]);
+
 export type User = typeof users.$inferSelect;
 export type UserPoint = typeof userPoints.$inferSelect;
 export type Post = typeof posts.$inferSelect;
@@ -93,3 +106,4 @@ export type Campaign = typeof campaigns.$inferSelect;
 export type CampaignApplication = typeof campaignApplications.$inferSelect;
 export type LoginLog = typeof loginLogs.$inferSelect;
 export type AdminAuditLog = typeof adminAuditLogs.$inferSelect;
+export type Report = typeof reports.$inferSelect;

@@ -91,12 +91,20 @@ export default async function AdminCampaignsPage({
                     )}
                   </td>
                   <td className="border border-slate-700/50 px-4 py-2 text-center">
-                    <Link
-                      href={`/admin/campaigns/${c.id}/edit`}
-                      className="text-indigo-400 hover:text-indigo-200 hover:underline text-xs transition"
-                    >
-                      編集
-                    </Link>
+                    <div className="flex items-center justify-center gap-3">
+                      <Link
+                        href={`/admin/campaigns/${c.id}/edit`}
+                        className="text-indigo-400 hover:text-indigo-200 hover:underline text-xs transition"
+                      >
+                        編集
+                      </Link>
+                      <Link
+                        href={`/admin/campaigns/${c.id}/applications`}
+                        className="text-emerald-400 hover:text-emerald-200 hover:underline text-xs transition"
+                      >
+                        応募状況
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ))}
