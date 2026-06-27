@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 function formatRemaining(ms: number): string {
   if (ms <= 0) return "期限切れ";
@@ -26,7 +26,9 @@ export function CountdownTimer({
   const [progress, setProgress] = useState(0);
   const expiredRef = useRef(false);
   const onExpireRef = useRef(onExpire);
-  onExpireRef.current = onExpire;
+  useLayoutEffect(() => {
+    onExpireRef.current = onExpire;
+  });
 
   useEffect(() => {
     const total = new Date(hiddenAt).getTime() - new Date(createdAt).getTime();

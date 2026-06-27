@@ -17,10 +17,6 @@ export function ReportButton({ postId }: Props) {
   const btnRef = useRef<HTMLButtonElement>(null);
   const popupRef = useRef<HTMLDivElement>(null);
   const [popupStyle, setPopupStyle] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
-
   function handleToggle() {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
@@ -75,7 +71,7 @@ export function ReportButton({ postId }: Props) {
   }
 
   const popup =
-    open && mounted
+    open
       ? createPortal(
           <div
             ref={popupRef}

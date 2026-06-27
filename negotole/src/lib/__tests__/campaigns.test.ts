@@ -80,9 +80,6 @@ describe("grantCampaignPoints", () => {
     await grantCampaignPoints(1, 10, 100, "permanent", endsAt);
 
     expect(mockTransaction).toHaveBeenCalledOnce();
-    const userPointCall = mockInsert.mock.calls.find(
-      (call) => call[0]?.constructor?.name !== "PgTable" // userPoints insert の引数を確認
-    );
     // insert が2回（campaignApplications + userPoints）呼ばれていることを確認
     expect(mockInsert).toHaveBeenCalledTimes(2);
   });
@@ -93,7 +90,7 @@ describe("grantCampaignPoints", () => {
 
     mockTransaction.mockImplementation(async (callback: (tx: { insert: (table: unknown) => { values: (v: Record<string, unknown>) => Promise<void> } }) => Promise<void>) => {
       const tx = {
-        insert: (_table: unknown) => ({
+        insert: (_: unknown) => ({
           values: (v: Record<string, unknown>) => {
             insertedValues.push(v);
             return Promise.resolve(undefined);
@@ -115,7 +112,7 @@ describe("grantCampaignPoints", () => {
 
     mockTransaction.mockImplementation(async (callback: (tx: { insert: (table: unknown) => { values: (v: Record<string, unknown>) => Promise<void> } }) => Promise<void>) => {
       const tx = {
-        insert: (_table: unknown) => ({
+        insert: (_: unknown) => ({
           values: (v: Record<string, unknown>) => {
             insertedValues.push(v);
             return Promise.resolve(undefined);
