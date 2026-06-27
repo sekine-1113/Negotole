@@ -40,7 +40,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               .from(users)
               .where(and(eq(users.id, existingId), isNull(users.email), isNull(users.deletedAt)))
               .limit(1);
-            if (existing && !existing.bannedAt) {
+            if (existing) {
+              if (existing.bannedAt) return null;
               return { id: String(existing.id), name: "ゲスト", role: existing.role };
             }
           }

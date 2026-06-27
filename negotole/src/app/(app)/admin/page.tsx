@@ -1,26 +1,9 @@
 import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { posts, reports, userPoints, users } from "@/lib/db/schema";
-import { and, count, gt, isNull, lt, sql, sum } from "drizzle-orm";
+import { and, count, gt, isNull, sum } from "drizzle-orm";
+import { getJSTDayBounds } from "@/lib/points";
 import { redirect } from "next/navigation";
-
-const JST_OFFSET_MS = 9 * 60 * 60 * 1000;
-
-function getJSTTodayBounds(): { todayStart: Date; todayEnd: Date } {
-  const nowUTC = Date.now();
-  const nowJST = new Date(nowUTC + JST_OFFSET_MS);
-
-  const startJST = new Date(nowJST);
-  startJST.setUTCHours(0, 0, 0, 0);
-
-  const endJST = new Date(nowJST);
-  endJST.setUTCHours(23, 59, 59, 999);
-
-  return {
-    todayStart: new Date(startJST.getTime() - JST_OFFSET_MS),
-    todayEnd: new Date(endJST.getTime() - JST_OFFSET_MS),
-  };
-}
 
 export default async function AdminDashboardPage() {
   const session = await auth();
@@ -28,16 +11,10 @@ export default async function AdminDashboardPage() {
     redirect("/");
   }
 
-  const { todayStart } = getJSTTodayBounds();
+  const { todayStart } = getJSTDayBounds();
   const now = new Date();
 
-  const [
-    [todayPostsRow],
-    [newUsersRow],
-    [activePostsRow],
-    [totalPointsTodayRow],
-    [unresolvedReportsRow],
-  ] = await Promise.all([
+  const results = await Promise.allSettled([
     db
       .select({ count: count() })
       .from(posts)
@@ -65,6 +42,12 @@ export default async function AdminDashboardPage() {
       .from(reports)
       .where(isNull(reports.resolvedAt)),
   ]);
+
+  const [todayPostsRow] = results[0].status === "fulfilled" ? results[0].value : [{ count: 0 }];
+  const [newUsersRow] = results[1].status === "fulfilled" ? results[1].value : [{ count: 0 }];
+  const [activePostsRow] = results[2].status === "fulfilled" ? results[2].value : [{ count: 0 }];
+  const [totalPointsTodayRow] = results[3].status === "fulfilled" ? results[3].value : [{ total: null }];
+  const [unresolvedReportsRow] = results[4].status === "fulfilled" ? results[4].value : [{ count: 0 }];
 
   const stats = [
     { label: "今日の投稿数", value: todayPostsRow?.count ?? 0, unit: "件", color: "indigo" },

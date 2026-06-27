@@ -4,22 +4,33 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
+import { CopyLinkButton } from "./CopyLinkButton";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://negotole.vercel.app";
 
 type Props = { params: Promise<{ id: string }> };
+
+const fetchPost = cache(async (postId: number) => {
+  const [post] = await db
+    .select({
+      id: posts.id,
+      content: posts.content,
+      hiddenAt: posts.hiddenAt,
+      createdAt: posts.createdAt,
+    })
+    .from(posts)
+    .where(and(eq(posts.id, postId), isNull(posts.deletedAt), gt(posts.hiddenAt, sql`NOW()`)))
+    .limit(1);
+  return post ?? null;
+});
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const postId = Number(id);
   if (!Number.isSafeInteger(postId) || postId <= 0) return {};
 
-  const [post] = await db
-    .select({ content: posts.content })
-    .from(posts)
-    .where(and(eq(posts.id, postId), isNull(posts.deletedAt), gt(posts.hiddenAt, sql`NOW()`)))
-    .limit(1);
-
+  const post = await fetchPost(postId);
   if (!post) return {};
 
   const description = post.content.slice(0, 100);
@@ -51,17 +62,7 @@ export default async function PostDetailPage({ params }: Props) {
   const postId = Number(id);
   if (!Number.isSafeInteger(postId) || postId <= 0) notFound();
 
-  const [post] = await db
-    .select({
-      id: posts.id,
-      content: posts.content,
-      hiddenAt: posts.hiddenAt,
-      createdAt: posts.createdAt,
-    })
-    .from(posts)
-    .where(and(eq(posts.id, postId), isNull(posts.deletedAt), gt(posts.hiddenAt, sql`NOW()`)))
-    .limit(1);
-
+  const post = await fetchPost(postId);
   if (!post) notFound();
 
   const postUrl = `${APP_URL}/post/${post.id}`;
@@ -100,17 +101,7 @@ export default async function PostDetailPage({ params }: Props) {
           </svg>
           X (Twitter) でシェア
         </a>
-        <button
-          onClick={() => {
-            if (navigator.clipboard) {
-              navigator.clipboard.writeText(postUrl);
-            }
-          }}
-          className="flex items-center justify-center gap-2 w-full py-3 border border-indigo-950/50 text-indigo-300 text-sm rounded-2xl hover:bg-slate-900/40 transition"
-          suppressHydrationWarning
-        >
-          リンクをコピー
-        </button>
+        <CopyLinkButton postUrl={postUrl} />
       </div>
     </main>
   );

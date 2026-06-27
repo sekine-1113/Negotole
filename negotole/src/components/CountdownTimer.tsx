@@ -25,6 +25,8 @@ export function CountdownTimer({
   const [remaining, setRemaining] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const expiredRef = useRef(false);
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
 
   useEffect(() => {
     const total = new Date(hiddenAt).getTime() - new Date(createdAt).getTime();
@@ -41,7 +43,7 @@ export function CountdownTimer({
       setProgress(prog);
       if (rem <= 0 && !expiredRef.current) {
         expiredRef.current = true;
-        onExpire?.();
+        onExpireRef.current?.();
       }
     };
 
@@ -51,7 +53,7 @@ export function CountdownTimer({
       clearTimeout(initial);
       clearInterval(timer);
     };
-  }, [hiddenAt, createdAt, onExpire]);
+  }, [hiddenAt, createdAt]);
 
   if (remaining === null) return null;
 
