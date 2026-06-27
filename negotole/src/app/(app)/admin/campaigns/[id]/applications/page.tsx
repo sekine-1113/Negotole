@@ -110,7 +110,7 @@ export default async function CampaignApplicationsPage({
               {items.map((row, i) => (
                 <tr key={row.applicationId} className="hover:bg-slate-800/50 transition-colors">
                   <td className="border border-slate-700/50 px-4 py-2 text-slate-400">
-                    {(cursorId ?? 0) + i + 1}
+                    {i + 1}
                   </td>
                   <td className="border border-slate-700/50 px-4 py-2">{row.userId}</td>
                   <td className="border border-slate-700/50 px-4 py-2">{row.userName ?? "不明"}</td>

@@ -68,7 +68,7 @@ export default async function AdminReportsPage({
           >
             {onlyUnresolved ? "すべて表示" : "未解決のみ"}
           </Link>
-          <span className="text-slate-400 text-sm">{items.length} 件</span>
+          <span className="text-slate-400 text-sm">このページ {items.length} 件</span>
         </div>
       </div>
 

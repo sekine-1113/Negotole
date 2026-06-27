@@ -96,6 +96,7 @@ export const reports = pgTable("report", {
 }, (t) => [
   index("report_post_id_idx").on(t.postId),
   index("report_created_at_idx").on(t.createdAt),
+  uniqueIndex("report_post_reporter_uidx").on(t.postId, t.reporterId),
 ]);
 
 export type User = typeof users.$inferSelect;

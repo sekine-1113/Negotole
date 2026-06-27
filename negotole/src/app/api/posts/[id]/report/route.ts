@@ -3,8 +3,7 @@ import { db } from "@/lib/db";
 import { posts, reports } from "@/lib/db/schema";
 import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
-
-const VALID_REASONS = ["スパム", "不適切なコンテンツ", "誹謗中傷", "その他"] as const;
+import { VALID_REASONS } from "@/lib/constants";
 
 export async function POST(
   req: NextRequest,
@@ -30,6 +29,9 @@ export async function POST(
   if (!reason || typeof reason !== "string" || reason.trim().length === 0 || reason.length > 255) {
     return NextResponse.json({ error: "reason は 1〜255 文字で入力してください" }, { status: 400 });
   }
+  if (!VALID_REASONS.includes(reason.trim() as typeof VALID_REASONS[number])) {
+    return NextResponse.json({ error: "無効な通報理由" }, { status: 400 });
+  }
 
   const [existing] = await db
     .select({ id: posts.id })
@@ -42,6 +44,16 @@ export async function POST(
   }
 
   const reporterId = Number(session.user.id);
+
+  const [alreadyReported] = await db
+    .select({ id: reports.id })
+    .from(reports)
+    .where(and(eq(reports.postId, postId), eq(reports.reporterId, reporterId)))
+    .limit(1);
+  if (alreadyReported) {
+    return NextResponse.json({ error: "すでに通報済みです" }, { status: 409 });
+  }
+
   await db.insert(reports).values({
     postId,
     reporterId,

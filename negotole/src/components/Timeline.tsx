@@ -59,7 +59,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
       const sinceId = topPostIdRef.current;
       if (!sinceId) return;
       try {
-        const since = Buffer.from(String(sinceId)).toString("base64");
+        const since = btoa(String(sinceId));
         const res = await fetch(`/api/posts?since=${since}`);
         if (!res.ok) return;
         const data = await res.json();

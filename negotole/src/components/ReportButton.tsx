@@ -1,8 +1,7 @@
 "use client";
 
+import { VALID_REASONS as REASONS } from "@/lib/constants";
 import { useState } from "react";
-
-const REASONS = ["スパム", "不適切なコンテンツ", "誹謗中傷", "その他"] as const;
 
 type Props = {
   postId: number;

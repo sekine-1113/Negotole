@@ -2,7 +2,6 @@ import { auth, signIn, signOut } from "@/lib/auth";
 import { getCachedPointBalance } from "@/lib/points";
 import { Moon } from "lucide-react";
 import Link from "next/link";
-import { GuestLoginButton } from "./GuestLoginButton";
 import { PointBadge } from "./PointBadge";
 
 export async function Header() {
@@ -64,24 +63,19 @@ export async function Header() {
               </form>
             </>
           ) : (
-            <div className="flex items-center gap-2">
-              {process.env.NODE_ENV === "development" && (
-                <form
-                  action={async () => {
-                    "use server";
-                    await signIn("google", { redirectTo: "/" });
-                  }}
-                >
-                  <button
-                    type="submit"
-                    className="text-xs border border-indigo-400/50 text-indigo-300 hover:bg-indigo-900/40 rounded-full px-3 py-2 min-h-[44px] inline-flex items-center transition sm:text-sm"
-                  >
-                    [dev] Google
-                  </button>
-                </form>
-              )}
-              <GuestLoginButton />
-            </div>
+            <form
+              action={async () => {
+                "use server";
+                await signIn("google", { redirectTo: "/" });
+              }}
+            >
+              <button
+                type="submit"
+                className="text-xs bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white rounded-full px-4 py-2 min-h-[44px] inline-flex items-center shadow-lg shadow-indigo-500/20 transition sm:text-sm"
+              >
+                Google でログイン
+              </button>
+            </form>
           )}
         </div>
       </div>

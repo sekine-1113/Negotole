@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
   const limit = Number(searchParams.get("limit") ?? 20);
   const sinceParam = searchParams.get("since");
 
+  if (cursor && sinceParam) {
+    return NextResponse.json({ error: "cursor と since は同時に指定できません" }, { status: 400 });
+  }
+
   let cursorId: number | null = null;
   if (cursor) {
     const decoded = Number(Buffer.from(cursor, "base64").toString());
