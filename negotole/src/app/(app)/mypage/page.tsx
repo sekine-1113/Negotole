@@ -2,6 +2,8 @@ import { auth } from "@/lib/auth";
 import { getPointBalance } from "@/lib/points";
 import { ClaimTransferSection } from "@/components/ClaimTransferSection";
 import { TransferCodeSection } from "@/components/TransferCodeSection";
+import { PostHeatmap } from "@/components/PostHeatmap";
+import { getPostHourDistribution } from "@/lib/posts";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -11,12 +13,20 @@ export default async function MyPage() {
     redirect("/");
   }
 
+  const userId = Number(session.user.id);
   let balance = { daily: 0, permanent: 0, total: 0 };
   try {
-    balance = await getPointBalance(Number(session.user.id));
+    balance = await getPointBalance(userId);
   } catch {
     // ポイント取得失敗時はデフォルト値を使用
   }
+  let hourCounts: number[] = new Array(24).fill(0);
+  try {
+    hourCounts = await getPostHourDistribution(userId);
+  } catch {
+    // 取得失敗時は非表示
+  }
+  const hasHeatmap = hourCounts.some((n) => n > 0);
 
   return (
     <main className="px-4 py-6 max-w-xl mx-auto relative z-10">
@@ -61,6 +71,12 @@ export default async function MyPage() {
             ユーザー自身による購入や手動チャージはありません。期間限定ポイントは毎日のキャンペーンなどで入手可能です。
           </p>
         </div>
+
+        {hasHeatmap && (
+          <div className="mt-4 mb-2">
+            <PostHeatmap hourCounts={hourCounts} />
+          </div>
+        )}
 
         <div className="mt-4 mb-4">
           {session.user.isGuest ? (

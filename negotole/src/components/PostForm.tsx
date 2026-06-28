@@ -15,9 +15,10 @@ const DURATIONS = [
 
 type Props = {
   totalPoints: number;
+  pastPost?: { content: string } | null;
 };
 
-export function PostForm({ totalPoints }: Props) {
+export function PostForm({ totalPoints, pastPost }: Props) {
   const router = useRouter();
   const [content, setContent] = useState("");
   const [duration, setDuration] = useState<number | "random">(720);
@@ -58,6 +59,9 @@ export function PostForm({ totalPoints }: Props) {
       <div className="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-5 backdrop-blur-md shadow-xl relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
 
+        {pastPost && (
+          <p className="text-xs text-indigo-300/20 italic mb-3 leading-relaxed whitespace-pre-wrap break-words">{pastPost.content}</p>
+        )}
         <div className="mb-4">
           <textarea
             value={content}

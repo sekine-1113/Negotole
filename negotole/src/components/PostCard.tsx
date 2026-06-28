@@ -12,6 +12,13 @@ type Post = {
   createdAt: string;
 };
 
+function contentFontSize(len: number): string {
+  if (len <= 30) return "text-xl";
+  if (len <= 80) return "text-base";
+  if (len <= 150) return "text-sm";
+  return "text-xs";
+}
+
 // userId は受け取らない（ブラインドポスト設計原則）
 type Props = {
   post: Post;
@@ -28,7 +35,7 @@ export function PostCard({ post, isLoggedIn, onExpire, showCountdown = true }: P
   return (
     <article className="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-4 backdrop-blur-md shadow-xl relative overflow-hidden">
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
-      <p className={`text-slate-100 whitespace-pre-wrap break-words text-sm mb-3 ${isNearExpiry ? "animate-wobble" : ""}`}>
+      <p className={`text-slate-100 whitespace-pre-wrap break-words ${contentFontSize(post.content.length)} mb-3 ${isNearExpiry ? "animate-wobble" : ""}`}>
         {post.content}
       </p>
       <div className="flex items-center justify-between gap-2">
