@@ -22,10 +22,17 @@ html {
   80%       { transform: translateX(-0.8px) translateY(-0.4px); }
 }
 
+@keyframes fade-away {
+  0%   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+  60%  { opacity: 0.3; transform: scale(0.97) translateY(-2px); filter: blur(1px); }
+  100% { opacity: 0; transform: scale(0.95) translateY(-4px); filter: blur(3px); }
+}
+
 @theme {
   --animate-float: float 4s ease-in-out infinite;
   --animate-star-pulse: star-pulse 3s ease-in-out infinite;
   --animate-wobble: wobble 2.4s ease-in-out infinite;
+  --animate-fade-away: fade-away 2.5s ease-out forwards;
 }
 
 body {

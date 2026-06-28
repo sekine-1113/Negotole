@@ -31,9 +31,15 @@ export function PostCard({ post, isLoggedIn, onExpire, showCountdown = true }: P
   const [isNearExpiry, setIsNearExpiry] = useState(
     () => new Date(post.hiddenAt).getTime() - Date.now() <= 300_000
   );
+  const [fading, setFading] = useState(false);
+
+  function handleExpire() {
+    setFading(true);
+    setTimeout(() => onExpire?.(), 2500);
+  }
 
   return (
-    <article className="bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-4 backdrop-blur-md shadow-xl relative overflow-hidden">
+    <article className={`bg-slate-900/60 border border-indigo-950/70 rounded-2xl p-4 backdrop-blur-md shadow-xl relative overflow-hidden ${fading ? "animate-fade-away pointer-events-none" : ""}`}>
       <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
       <p className={`text-slate-100 whitespace-pre-wrap break-words ${contentFontSize(post.content.length)} mb-3 ${isNearExpiry ? "animate-wobble" : ""}`}>
         {post.content}
@@ -44,7 +50,7 @@ export function PostCard({ post, isLoggedIn, onExpire, showCountdown = true }: P
           <CountdownTimer
             hiddenAt={post.hiddenAt}
             createdAt={post.createdAt}
-            onExpire={onExpire}
+            onExpire={handleExpire}
             onNearExpiry={() => setIsNearExpiry(true)}
           />
         </div>

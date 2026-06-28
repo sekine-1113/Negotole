@@ -2,8 +2,16 @@
 
 import { POST_COST_BY_DURATION } from "@/lib/constants";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Send } from "lucide-react";
+
+function timePlaceholder(): string {
+  const h = (new Date().getUTCHours() + 9) % 24;
+  if (h >= 5 && h < 10)  return "今日の始まりに、何かありましたか";
+  if (h >= 10 && h < 17) return "起きたら消えてしまう本音、昼間だけの独り言をささやこう...";
+  if (h >= 17 && h < 22) return "今日が終わる前に、一つだけ残しておくとしたら";
+  return "眠れない夜に、誰にも言えなかったことを";
+}
 
 const DURATIONS = [
   { label: "1h", value: 60 },
@@ -20,6 +28,7 @@ type Props = {
 
 export function PostForm({ totalPoints, pastPost }: Props) {
   const router = useRouter();
+  const placeholder = useMemo(() => timePlaceholder(), []);
   const [content, setContent] = useState("");
   const [duration, setDuration] = useState<number | "random">(720);
   const [submitting, setSubmitting] = useState(false);
@@ -67,7 +76,7 @@ export function PostForm({ totalPoints, pastPost }: Props) {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             maxLength={255}
-            placeholder="起きたら消えてしまう本音、深夜だけの独り言をささやこう..."
+            placeholder={placeholder}
             rows={3}
             className="w-full bg-slate-950/80 border border-indigo-950/80 rounded-xl p-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-indigo-500 focus:border-indigo-500 text-sm resize-none transition"
           />
