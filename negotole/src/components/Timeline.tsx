@@ -12,12 +12,13 @@ type Post = {
 
 type Filter = "all" | "soon" | "medium" | "later" | "night";
 type Order = "newest" | "random";
+type ColorMode = "normal" | "grayscale" | "sepia";
 
 const POLL_INTERVAL_MS = 30_000;
 
 const LS_KEYS = {
   hideCountdown: "negotole_hide_countdown",
-  grayscale: "negotole_grayscale",
+  colorMode: "negotole_color_mode",
   hidePoints: "negotole_hide_points",
 } as const;
 
@@ -57,6 +58,12 @@ const FILTER_LABELS: { value: Filter; label: string }[] = [
   { value: "night", label: "夜の寝言" },
 ];
 
+const COLOR_MODE_LABELS: { value: ColorMode; label: string }[] = [
+  { value: "normal", label: "ノーマル" },
+  { value: "grayscale", label: "モノクロ" },
+  { value: "sepia", label: "セピア" },
+];
+
 function subscribeStorage(cb: () => void) {
   window.addEventListener("storage", cb);
   return () => window.removeEventListener("storage", cb);
@@ -71,9 +78,10 @@ type Props = {
   initialNextCursor: string | null;
   isLoggedIn: boolean;
   initialTotalActive: number;
+  initialExpiredToday: number;
 };
 
-export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialTotalActive }: Props) {
+export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialTotalActive, initialExpiredToday }: Props) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [nextCursor, setNextCursor] = useState<string | null>(initialNextCursor);
   const [loading, setLoading] = useState(false);
@@ -81,28 +89,84 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
   const [filter, setFilter] = useState<Filter>("all");
   const [order, setOrder] = useState<Order>("newest");
   const [totalActive, setTotalActive] = useState(initialTotalActive);
+  const [expiredToday, setExpiredToday] = useState(initialExpiredToday);
   const [showSettings, setShowSettings] = useState(false);
+  const [autoScroll, setAutoScroll] = useState(false);
+  const [isNightTime] = useState(() => {
+    const h = (new Date().getUTCHours() + 9) % 24;
+    return h >= 22 || h < 5;
+  });
   const maxSeenIdRef = useRef<number | null>(
     initialPosts.length > 0 ? Math.max(...initialPosts.map((p) => p.id)) : null
   );
   const orderRef = useRef<Order>("newest");
   const isFirstOrderChange = useRef(true);
+  const rafRef = useRef<number | null>(null);
+
+  // B-9: 旧 negotole_grayscale キーを negotole_color_mode へ自動マイグレーション
+  useEffect(() => {
+    const old = localStorage.getItem("negotole_grayscale");
+    if (old === "1") {
+      localStorage.setItem(LS_KEYS.colorMode, "grayscale");
+      localStorage.removeItem("negotole_grayscale");
+      window.dispatchEvent(new StorageEvent("storage", { key: LS_KEYS.colorMode, newValue: "grayscale" }));
+    }
+  }, []);
 
   const hideCountdown = useSyncExternalStore(
     subscribeStorage,
     () => localStorage.getItem(LS_KEYS.hideCountdown) === "1",
     () => false
   );
-  const grayscale = useSyncExternalStore(
+  const colorMode = useSyncExternalStore<ColorMode>(
     subscribeStorage,
-    () => localStorage.getItem(LS_KEYS.grayscale) === "1",
-    () => false
+    () => (localStorage.getItem(LS_KEYS.colorMode) as ColorMode) ?? "normal",
+    () => "normal"
   );
   const hidePoints = useSyncExternalStore(
     subscribeStorage,
     () => localStorage.getItem(LS_KEYS.hidePoints) === "1",
     () => false
   );
+
+  const colorFilter =
+    colorMode === "grayscale" ? "grayscale(1)" :
+    colorMode === "sepia"     ? "sepia(0.7)"  : undefined;
+
+  function setColorMode(mode: ColorMode) {
+    localStorage.setItem(LS_KEYS.colorMode, mode);
+    window.dispatchEvent(new StorageEvent("storage", { key: LS_KEYS.colorMode, newValue: mode }));
+  }
+
+  // B-2: 自動スクロール RAF ループ
+  useEffect(() => {
+    if (!autoScroll) {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      return;
+    }
+    const step = () => {
+      const atBottom = window.scrollY + window.innerHeight >= document.body.scrollHeight - 4;
+      if (atBottom) {
+        setAutoScroll(false);
+        return;
+      }
+      window.scrollBy(0, 0.5);
+      rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [autoScroll]);
+
+  // B-2: 手動スクロールで自動スクロール停止
+  useEffect(() => {
+    const stop = () => setAutoScroll(false);
+    window.addEventListener("wheel", stop, { passive: true });
+    window.addEventListener("touchmove", stop, { passive: true });
+    return () => {
+      window.removeEventListener("wheel", stop);
+      window.removeEventListener("touchmove", stop);
+    };
+  }, []);
 
   // order 変更時にランダムフェッチ（初回マウント時はスキップ）
   useEffect(() => {
@@ -125,6 +189,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
         setPosts(data.posts);
         setNextCursor(data.nextCursor);
         if (data.totalActive !== undefined) setTotalActive(data.totalActive);
+        if (data.expiredToday !== undefined) setExpiredToday(data.expiredToday);
         if (data.posts.length > 0) {
           const newMax = Math.max(...(data.posts as Post[]).map((p) => p.id));
           maxSeenIdRef.current = Math.max(maxSeenIdRef.current ?? 0, newMax);
@@ -160,6 +225,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
         if (!res.ok) return;
         const data = await res.json();
         if (data.totalActive !== undefined) setTotalActive(data.totalActive);
+        if (data.expiredToday !== undefined) setExpiredToday(data.expiredToday);
         if (data.posts.length > 0) {
           setPosts((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
@@ -206,6 +272,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
       }
       const data = await res.json();
       if (data.totalActive !== undefined) setTotalActive(data.totalActive);
+      if (data.expiredToday !== undefined) setExpiredToday(data.expiredToday);
       setPosts((prev) => {
         const existingIds = new Set(prev.map((p) => p.id));
         const newPosts = (data.posts as Post[]).filter((p) => !existingIds.has(p.id));
@@ -271,9 +338,10 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
       {showSettings && (
         <div className="bg-slate-900/40 border border-indigo-950/50 rounded-xl p-3 flex flex-col gap-3">
           <p className="text-xs text-indigo-300/50 font-bold tracking-wide">表示設定</p>
+
+          {/* カウントダウン / ポイント トグル */}
           {[
             { label: "カウントダウンを非表示", value: hideCountdown, lsKey: LS_KEYS.hideCountdown },
-            { label: "モノクロ表示", value: grayscale, lsKey: LS_KEYS.grayscale },
             { label: "ポイント数を非表示", value: hidePoints, lsKey: LS_KEYS.hidePoints },
           ].map(({ label, value, lsKey }) => (
             <label key={lsKey} className="flex items-center gap-3 cursor-pointer">
@@ -290,6 +358,44 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
               <span className="text-xs text-indigo-200/80">{label}</span>
             </label>
           ))}
+
+          {/* B-9: カラーモード 3択 */}
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs text-indigo-200/80">カラーモード</span>
+            <div className="flex gap-2">
+              {COLOR_MODE_LABELS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => setColorMode(value)}
+                  className={`text-xs px-3 py-1 rounded-full border transition ${
+                    colorMode === value
+                      ? "bg-indigo-600/60 border-indigo-500/60 text-indigo-100"
+                      : "border-indigo-950/50 text-indigo-300/60 hover:border-indigo-700/50 hover:text-indigo-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* B-2: 自動スクロール */}
+          <label className="flex items-center gap-3 cursor-pointer">
+            <button
+              role="switch"
+              aria-checked={autoScroll}
+              onClick={() => {
+                if (!autoScroll && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+                setAutoScroll((v) => !v);
+              }}
+              className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${autoScroll ? "bg-indigo-500" : "bg-slate-700"}`}
+            >
+              <span
+                className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white transition-transform ${autoScroll ? "translate-x-4" : "translate-x-0"}`}
+              />
+            </button>
+            <span className="text-xs text-indigo-200/80">自動スクロール</span>
+          </label>
         </div>
       )}
 
@@ -300,7 +406,8 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
         <p className="text-center text-indigo-300/60 py-12">このフィルターに該当する投稿がありません</p>
       )}
 
-      <div style={grayscale ? { filter: "grayscale(1)" } : {}}>
+      {/* B-10: 深夜フォントウェイト / B-9: カラーフィルター */}
+      <div style={colorFilter ? { filter: colorFilter } : {}} className={isNightTime ? "font-light" : ""}>
         {filteredPosts.map((post) => (
           <div key={post.id} style={{ marginBottom: `${getStableMargin(post.id)}px` }}>
             <PostCard
@@ -312,6 +419,13 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
           </div>
         ))}
       </div>
+
+      {/* B-4: 消えた言葉の気配 */}
+      {expiredToday > 0 && (
+        <p className="text-xs text-indigo-300/20 text-center py-4 italic">
+          今日、{expiredToday} 件の言葉がここを旅立った
+        </p>
+      )}
 
       {error && (
         <p className="text-center text-red-400/80 text-sm py-2">{error}</p>
