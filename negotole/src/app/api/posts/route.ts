@@ -63,13 +63,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { content, duration } = body;
+  const { content, duration: rawDuration } = body;
 
   if (!content || typeof content !== "string" || content.trim().length === 0 || content.length > 255) {
     return NextResponse.json({ error: "content must be 1-255 characters" }, { status: 400 });
   }
-  if (!VALID_DURATIONS.includes(duration)) {
+
+  let duration: (typeof VALID_DURATIONS)[number];
+  if (rawDuration === "random") {
+    duration = VALID_DURATIONS[Math.floor(Math.random() * VALID_DURATIONS.length)];
+  } else if (!VALID_DURATIONS.includes(rawDuration)) {
     return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
+  } else {
+    duration = rawDuration;
   }
 
   const cost = POST_COST_BY_DURATION[duration];
