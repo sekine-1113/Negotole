@@ -17,17 +17,22 @@ export function CountdownTimer({
   hiddenAt,
   createdAt,
   onExpire,
+  onNearExpiry,
 }: {
   hiddenAt: string;
   createdAt: string;
   onExpire?: () => void;
+  onNearExpiry?: () => void;
 }) {
   const [remaining, setRemaining] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
   const expiredRef = useRef(false);
+  const nearExpiredRef = useRef(false);
   const onExpireRef = useRef(onExpire);
+  const onNearExpiryRef = useRef(onNearExpiry);
   useLayoutEffect(() => {
     onExpireRef.current = onExpire;
+    onNearExpiryRef.current = onNearExpiry;
   });
 
   useEffect(() => {
@@ -43,6 +48,10 @@ export function CountdownTimer({
       const { rem, prog } = calc();
       setRemaining(rem);
       setProgress(prog);
+      if (rem <= 300_000 && !nearExpiredRef.current) {
+        nearExpiredRef.current = true;
+        onNearExpiryRef.current?.();
+      }
       if (rem <= 0 && !expiredRef.current) {
         expiredRef.current = true;
         onExpireRef.current?.();

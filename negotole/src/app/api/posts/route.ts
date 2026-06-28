@@ -8,14 +8,24 @@ import { log } from "@/lib/logger";
 import { postWriteLimiter } from "@/lib/ratelimit";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-
-const VALID_DURATIONS = [60, 180, 360, 720, 1440] as const;
+import { POST_COST_BY_DURATION, VALID_DURATIONS } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const cursor = searchParams.get("cursor");
   const limit = Number(searchParams.get("limit") ?? 20);
   const sinceParam = searchParams.get("since");
+  const orderParam = searchParams.get("order");
+
+  if (orderParam !== null && orderParam !== "random") {
+    return NextResponse.json({ error: "order は random のみ有効です" }, { status: 400 });
+  }
+
+  const order = orderParam === "random" ? "random" as const : "newest" as const;
+
+  if (order === "random" && sinceParam) {
+    return NextResponse.json({ error: "order=random と since は同時に指定できません" }, { status: 400 });
+  }
 
   if (cursor && sinceParam) {
     return NextResponse.json({ error: "cursor と since は同時に指定できません" }, { status: 400 });
@@ -39,7 +49,7 @@ export async function GET(request: NextRequest) {
     sinceId = decoded;
   }
 
-  const result = await fetchPosts({ cursorId, sinceId, limit });
+  const result = await fetchPosts({ cursorId, sinceId, limit, order });
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
@@ -64,15 +74,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const { content, duration } = body;
+  const { content, duration: rawDuration } = body;
 
   if (!content || typeof content !== "string" || content.trim().length === 0 || content.length > 255) {
     return NextResponse.json({ error: "content must be 1-255 characters" }, { status: 400 });
   }
-  if (!VALID_DURATIONS.includes(duration)) {
+
+  let duration: (typeof VALID_DURATIONS)[number];
+  if (rawDuration === "random") {
+    duration = VALID_DURATIONS[Math.floor(Math.random() * VALID_DURATIONS.length)];
+  } else if (!VALID_DURATIONS.includes(rawDuration)) {
     return NextResponse.json({ error: "Invalid duration" }, { status: 400 });
+  } else {
+    duration = rawDuration;
   }
 
+  const cost = POST_COST_BY_DURATION[duration];
   const hiddenAt = new Date(Date.now() + duration * 60 * 1000);
 
   const result = await db.transaction(async (tx) => {
@@ -89,7 +106,7 @@ export async function POST(request: NextRequest) {
       ) locked
     `);
     const total = Number(((balanceRows as unknown) as { rows: { total: string }[] }).rows[0]?.total ?? 0);
-    if (total < 1) {
+    if (total < cost) {
       return null;
     }
 
@@ -113,8 +130,8 @@ export async function POST(request: NextRequest) {
 
     await tx.insert(userPoints).values({
       userId,
-      getPoint: -1,
-      expiresAt: daily > 0 ? todayEnd : null,
+      getPoint: -cost,
+      expiresAt: daily >= cost ? todayEnd : null,
     });
 
     return post;

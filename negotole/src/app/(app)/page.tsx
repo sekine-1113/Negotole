@@ -9,7 +9,7 @@ export default async function HomePage() {
     auth(),
     fetchPosts().catch((e) => {
       console.error("[HomePage] Failed to fetch posts:", e);
-      return { posts: [], nextCursor: null } as FetchPostsResult;
+      return { posts: [], nextCursor: null, totalActive: 0, expiredToday: 0 } as FetchPostsResult;
     }),
     getActiveCampaign().catch(() => null),
   ]);
@@ -23,6 +23,8 @@ export default async function HomePage() {
         initialPosts={data.posts}
         initialNextCursor={data.nextCursor}
         isLoggedIn={isLoggedIn}
+        initialTotalActive={data.totalActive}
+        initialExpiredToday={data.expiredToday}
       />
     </main>
   );
