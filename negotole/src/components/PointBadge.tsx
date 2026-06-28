@@ -2,24 +2,21 @@
 
 import { Star } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 
 const LS_KEY = "negotole_hide_points";
 
+function subscribeStorage(cb: () => void) {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+}
+
 export function PointBadge({ total }: { total: number }) {
-  const [hidden, setHidden] = useState(false);
-
-  useEffect(() => {
-    setHidden(localStorage.getItem(LS_KEY) === "1");
-
-    const handleStorage = (e: StorageEvent) => {
-      if (e.key === LS_KEY) {
-        setHidden(e.newValue === "1");
-      }
-    };
-    window.addEventListener("storage", handleStorage);
-    return () => window.removeEventListener("storage", handleStorage);
-  }, []);
+  const hidden = useSyncExternalStore(
+    subscribeStorage,
+    () => localStorage.getItem(LS_KEY) === "1",
+    () => false
+  );
 
   return (
     <Link href="/mypage" className="inline-block">

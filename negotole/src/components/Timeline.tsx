@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { PostCard } from "./PostCard";
 
 type Post = {
@@ -27,6 +27,8 @@ const SILENCE_TEXTS = [
   "言葉が眠っている",
   "ここには今、誰もいない",
 ];
+
+const _silenceText = SILENCE_TEXTS[Math.floor(Math.random() * SILENCE_TEXTS.length)];
 
 function remainingMs(hiddenAt: string): number {
   return new Date(hiddenAt).getTime() - Date.now();
@@ -55,6 +57,15 @@ const FILTER_LABELS: { value: Filter; label: string }[] = [
   { value: "night", label: "夜の寝言" },
 ];
 
+function subscribeStorage(cb: () => void) {
+  window.addEventListener("storage", cb);
+  return () => window.removeEventListener("storage", cb);
+}
+
+function getStableMargin(id: number): number {
+  return ((id * 2654435761) >>> 0) % 32 + 4;
+}
+
 type Props = {
   initialPosts: Post[];
   initialNextCursor: string | null;
@@ -71,25 +82,27 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
   const [order, setOrder] = useState<Order>("newest");
   const [totalActive, setTotalActive] = useState(initialTotalActive);
   const [showSettings, setShowSettings] = useState(false);
-  const [hideCountdown, setHideCountdown] = useState(false);
-  const [grayscale, setGrayscale] = useState(false);
-  const [hidePoints, setHidePoints] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const [silenceText, setSilenceText] = useState(SILENCE_TEXTS[0]);
   const maxSeenIdRef = useRef<number | null>(
     initialPosts.length > 0 ? Math.max(...initialPosts.map((p) => p.id)) : null
   );
-  const marginRef = useRef<Map<number, number>>(new Map());
   const orderRef = useRef<Order>("newest");
   const isFirstOrderChange = useRef(true);
 
-  useEffect(() => {
-    setHideCountdown(localStorage.getItem(LS_KEYS.hideCountdown) === "1");
-    setGrayscale(localStorage.getItem(LS_KEYS.grayscale) === "1");
-    setHidePoints(localStorage.getItem(LS_KEYS.hidePoints) === "1");
-    setSilenceText(SILENCE_TEXTS[Math.floor(Math.random() * SILENCE_TEXTS.length)]);
-    setMounted(true);
-  }, []);
+  const hideCountdown = useSyncExternalStore(
+    subscribeStorage,
+    () => localStorage.getItem(LS_KEYS.hideCountdown) === "1",
+    () => false
+  );
+  const grayscale = useSyncExternalStore(
+    subscribeStorage,
+    () => localStorage.getItem(LS_KEYS.grayscale) === "1",
+    () => false
+  );
+  const hidePoints = useSyncExternalStore(
+    subscribeStorage,
+    () => localStorage.getItem(LS_KEYS.hidePoints) === "1",
+    () => false
+  );
 
   // order 変更時にランダムフェッチ（初回マウント時はスキップ）
   useEffect(() => {
@@ -126,22 +139,10 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
     return () => { cancelled = true; };
   }, [order]);
 
-  function toggleSetting(
-    lsKey: string,
-    setter: React.Dispatch<React.SetStateAction<boolean>>,
-    current: boolean
-  ) {
+  function toggleSetting(lsKey: string, current: boolean) {
     const next = !current;
     localStorage.setItem(lsKey, next ? "1" : "0");
-    setter(next);
     window.dispatchEvent(new StorageEvent("storage", { key: lsKey, newValue: next ? "1" : "0" }));
-  }
-
-  function getMargin(id: number): number {
-    if (!marginRef.current.has(id)) {
-      marginRef.current.set(id, Math.floor(Math.random() * 32) + 4);
-    }
-    return marginRef.current.get(id)!;
   }
 
   const handleExpire = useCallback((id: number) => {
@@ -271,15 +272,15 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
         <div className="bg-slate-900/40 border border-indigo-950/50 rounded-xl p-3 flex flex-col gap-3">
           <p className="text-xs text-indigo-300/50 font-bold tracking-wide">表示設定</p>
           {[
-            { label: "カウントダウンを非表示", value: hideCountdown, lsKey: LS_KEYS.hideCountdown, setter: setHideCountdown },
-            { label: "モノクロ表示", value: grayscale, lsKey: LS_KEYS.grayscale, setter: setGrayscale },
-            { label: "ポイント数を非表示", value: hidePoints, lsKey: LS_KEYS.hidePoints, setter: setHidePoints },
-          ].map(({ label, value, lsKey, setter }) => (
+            { label: "カウントダウンを非表示", value: hideCountdown, lsKey: LS_KEYS.hideCountdown },
+            { label: "モノクロ表示", value: grayscale, lsKey: LS_KEYS.grayscale },
+            { label: "ポイント数を非表示", value: hidePoints, lsKey: LS_KEYS.hidePoints },
+          ].map(({ label, value, lsKey }) => (
             <label key={lsKey} className="flex items-center gap-3 cursor-pointer">
               <button
                 role="switch"
                 aria-checked={value}
-                onClick={() => toggleSetting(lsKey, setter, value)}
+                onClick={() => toggleSetting(lsKey, value)}
                 className={`relative w-9 h-5 rounded-full transition-colors shrink-0 ${value ? "bg-indigo-500" : "bg-slate-700"}`}
               >
                 <span
@@ -293,7 +294,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
       )}
 
       {filteredPosts.length === 0 && posts.length === 0 && !loading && (
-        <p className="text-center text-indigo-300/50 py-12 text-sm italic">{silenceText}</p>
+        <p suppressHydrationWarning className="text-center text-indigo-300/50 py-12 text-sm italic">{_silenceText}</p>
       )}
       {filteredPosts.length === 0 && posts.length > 0 && (
         <p className="text-center text-indigo-300/60 py-12">このフィルターに該当する投稿がありません</p>
@@ -301,7 +302,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn, initialT
 
       <div style={grayscale ? { filter: "grayscale(1)" } : {}}>
         {filteredPosts.map((post) => (
-          <div key={post.id} style={{ marginBottom: mounted ? `${getMargin(post.id)}px` : "16px" }}>
+          <div key={post.id} style={{ marginBottom: `${getStableMargin(post.id)}px` }}>
             <PostCard
               post={post}
               isLoggedIn={isLoggedIn}
