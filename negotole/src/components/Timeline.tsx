@@ -65,14 +65,17 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
   const [hideCountdown, setHideCountdown] = useState(false);
   const [grayscale, setGrayscale] = useState(false);
   const [hidePoints, setHidePoints] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [silenceText, setSilenceText] = useState(SILENCE_TEXTS[0]);
   const topPostIdRef = useRef<number | null>(initialPosts[0]?.id ?? null);
   const marginRef = useRef<Map<number, number>>(new Map());
-  const silenceText = useRef(SILENCE_TEXTS[Math.floor(Math.random() * SILENCE_TEXTS.length)]).current;
 
   useEffect(() => {
     setHideCountdown(localStorage.getItem(LS_KEYS.hideCountdown) === "1");
     setGrayscale(localStorage.getItem(LS_KEYS.grayscale) === "1");
     setHidePoints(localStorage.getItem(LS_KEYS.hidePoints) === "1");
+    setSilenceText(SILENCE_TEXTS[Math.floor(Math.random() * SILENCE_TEXTS.length)]);
+    setMounted(true);
   }, []);
 
   function toggleSetting(
@@ -88,6 +91,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
 
   function getMargin(id: number): number {
     if (!marginRef.current.has(id)) {
+      // マウント後のみ呼ばれる想定（SSRでは呼ばれない）
       marginRef.current.set(id, Math.floor(Math.random() * 32) + 4);
     }
     return marginRef.current.get(id)!;
@@ -216,7 +220,7 @@ export function Timeline({ initialPosts, initialNextCursor, isLoggedIn }: Props)
 
       <div style={grayscale ? { filter: "grayscale(1)" } : {}}>
         {filteredPosts.map((post) => (
-          <div key={post.id} style={{ marginBottom: `${getMargin(post.id)}px` }}>
+          <div key={post.id} style={{ marginBottom: mounted ? `${getMargin(post.id)}px` : "16px" }}>
             <PostCard
               post={post}
               isLoggedIn={isLoggedIn}
