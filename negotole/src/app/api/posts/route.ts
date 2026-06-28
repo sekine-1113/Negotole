@@ -15,6 +15,17 @@ export async function GET(request: NextRequest) {
   const cursor = searchParams.get("cursor");
   const limit = Number(searchParams.get("limit") ?? 20);
   const sinceParam = searchParams.get("since");
+  const orderParam = searchParams.get("order");
+
+  if (orderParam !== null && orderParam !== "random") {
+    return NextResponse.json({ error: "order は random のみ有効です" }, { status: 400 });
+  }
+
+  const order = orderParam === "random" ? "random" as const : "newest" as const;
+
+  if (order === "random" && sinceParam) {
+    return NextResponse.json({ error: "order=random と since は同時に指定できません" }, { status: 400 });
+  }
 
   if (cursor && sinceParam) {
     return NextResponse.json({ error: "cursor と since は同時に指定できません" }, { status: 400 });
@@ -38,7 +49,7 @@ export async function GET(request: NextRequest) {
     sinceId = decoded;
   }
 
-  const result = await fetchPosts({ cursorId, sinceId, limit });
+  const result = await fetchPosts({ cursorId, sinceId, limit, order });
   return NextResponse.json(result, { headers: { "Cache-Control": "no-store" } });
 }
 
