@@ -79,10 +79,7 @@ export default async function PostDetailPage({ params }: Props) {
         <p className="text-slate-100 whitespace-pre-wrap break-words text-base leading-relaxed mb-6">
           {post.content}
         </p>
-        <div className="flex items-center justify-between text-xs text-slate-500">
-          <span>
-            {new Date(post.createdAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
-          </span>
+        <div className="flex items-center justify-end text-xs text-slate-500">
           <span className="text-indigo-400">
             非表示: {new Date(post.hiddenAt).toLocaleString("ja-JP", { timeZone: "Asia/Tokyo" })}
           </span>
